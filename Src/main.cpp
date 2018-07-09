@@ -38,15 +38,15 @@ public:
         elapsed_ = 0;
         start();
     }
-    //ÂæÆÁßí
+    //Œ¢√Î
     double elapsed() {
         return static_cast<double>(elapsed_);
     }
-    //ÊØ´Áßí
+    //∫¡√Î
     double elapsed_ms() {
         return elapsed_ / 1000.0;
     }
-    //Áßí
+    //√Î
     double elapsed_second() {
         return elapsed_ / 1000000.0;
     }
@@ -96,21 +96,21 @@ int main(int argc, char **argv) {
     KeyboardManager::init();
     int pid = 1;
     if (!GetProcessIdByName("th10.exe", pid)) {
-        printf("th10.exe not runningÔºÅ\n");
+        printf("th10.exe not running£°\n");
         system("pause");
         return 0;
     }
     auto process = OpenProcess(PROCESS_VM_READ, true, pid);
     if (!process) {
-        printf("cannot open th10 processÔºÅ\n");
+        printf("cannot open th10 process£°\n");
         system("pause");
         return 0;
     }
     auto game = std::make_shared<GameManager>(process);
     bool quit = false;
-    std::cout << "ÂáÜÂ§áÂÆåÊàê" << std::endl;
-    pauseUntilPress("ËØ∑Â∞ÜÁÑ¶ÁÇπÊîæÂú®È£éÁ•ûÂΩïÁ™óÂè£‰∏äÔºåÂºÄÂßãÊ∏∏ÊàèÔºåÁÑ∂ÂêéÊåâCÂºÄÂêØAI", 'C');
-    std::cout << "Â∑≤ÂºÄÂßãÊ∏∏ÊàèÔºåÊåâQÈîÆÈÄÄÂá∫" << std::endl;
+    std::cout << "◊º±∏ÕÍ≥…" << std::endl;
+    pauseUntilPress("«ÎΩ´Ωπµ„∑≈‘⁄∑Á…Ò¬º¥∞ø⁄…œ£¨ø™ º”Œœ∑£¨»ª∫Û∞¥Cø™∆ÙAI", 'C');
+    std::cout << "“—ø™ º”Œœ∑£¨∞¥Qº¸ÕÀ≥ˆ" << std::endl;
     unsigned long long frameCount = 0;
     while (!quit) {
         stop_watch watch;
