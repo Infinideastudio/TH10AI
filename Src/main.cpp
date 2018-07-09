@@ -18,42 +18,19 @@
 using namespace std;
 using namespace std::chrono;
 
-class stop_watch {
+class StopWatch {
 public:
-    stop_watch()
-            : elapsed_(0) {
-        QueryPerformanceFrequency(&freq_);
-    }
-    ~stop_watch() = default;
+    StopWatch() = default;
+    ~StopWatch() = default;
 public:
-    void start() {
-        QueryPerformanceCounter(&begin_time_);
-    }
-    void stop() {
-        LARGE_INTEGER end_time;
-        QueryPerformanceCounter(&end_time);
-        elapsed_ += (end_time.QuadPart - begin_time_.QuadPart) * 1000000 / freq_.QuadPart;
-    }
-    void restart() {
-        elapsed_ = 0;
-        start();
-    }
-    //微秒
-    double elapsed() {
-        return static_cast<double>(elapsed_);
-    }
-    //毫秒
-    double elapsed_ms() {
-        return elapsed_ / 1000.0;
-    }
-    //秒
-    double elapsed_second() {
-        return elapsed_ / 1000000.0;
-    }
+    void start() noexcept { mBeginTime = steady_clock::now(); }
+    void stop() noexcept { mEndTime = steady_clock::now(); }
+    void restart() noexcept { start(); }
+    steady_clock::duration elapsed() const noexcept { return mEndTime - mBeginTime; }
+    int elapsed_ms() const noexcept { return static_cast<int>(duration_cast<microseconds>(elapsed()).count()); };
+    int elapsed_s() const noexcept { return static_cast<int>(duration_cast<seconds>(elapsed()).count()); };
 private:
-    LARGE_INTEGER freq_{};
-    LARGE_INTEGER begin_time_{};
-    long long elapsed_;
+    steady_clock::time_point mBeginTime, mEndTime;
 };
 
 bool GetProcessIdByName(const char *exeFileName, int &pid) {
@@ -113,14 +90,14 @@ int main(int argc, char **argv) {
     std::cout << "已开始游戏，按Q键退出" << std::endl;
     unsigned long long frameCount = 0;
     while (!quit) {
-        stop_watch watch;
+        StopWatch watch;
         watch.start();
         frameCount++;
         game->update(frameCount);
         watch.stop();
         if (isKeyDown('Q'))
             quit = true;
-        std::this_thread::sleep_for(microseconds(std::max(0, 14 - static_cast<int>(watch.elapsed_ms()))));
+        std::this_thread::sleep_for(microseconds(std::max(0, 14 - watch.elapsed_ms())));
     }
     KeyboardManager::sendKeyInfo(0, false, false, false);
     system("pause");
