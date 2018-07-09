@@ -1,0 +1,2 @@
+# TH10AI
+东方ProjectTH10AI
