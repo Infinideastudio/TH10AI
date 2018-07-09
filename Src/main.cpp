@@ -4,14 +4,8 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
-#include "Windows.hpp"
-#include <tlhelp32.h>
-#include <memory>
 #include <ctime>
 #include <thread>
-#include <chrono>
-#include "Vec2.hpp"
-#include "Object.hpp"
 #include "KeyboardManager.hpp"
 #include "GameManager.hpp"
 
@@ -33,26 +27,6 @@ private:
     steady_clock::time_point mBeginTime, mEndTime;
 };
 
-bool GetProcessIdByName(const char *exeFileName, int &pid) {
-    pid = 0;
-    PROCESSENTRY32 pe;
-    pe.dwSize = sizeof(pe);
-    HANDLE hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    bool res = Process32First(hsnap, &pe);
-    //cout << res << endl;
-    do {
-        //printf("%s\n", pe.szExeFile);
-        if (!strcmp(exeFileName, pe.szExeFile)) {
-            pid = pe.th32ProcessID;
-            break;
-        }
-    } while (Process32Next(hsnap, &pe));
-    if (!pid) {
-
-        return false;
-    }
-    return true;
-}
 void PointRotate(float cx, float cy, float &x, float &y, float arc) {
     float _x, _y;
     _x = cx + (x - cx) * cos(arc) - (y - cy) * sin(arc);
@@ -60,6 +34,7 @@ void PointRotate(float cx, float cy, float &x, float &y, float arc) {
     x = _x;
     y = _y;
 }
+
 void pauseUntilPress(const std::string &info, char key) {
     std::cout << info << std::endl;
     while (true) {
@@ -69,36 +44,30 @@ void pauseUntilPress(const std::string &info, char key) {
 }
 
 int main(int argc, char **argv) {
-    srand(static_cast<unsigned int>(time(nullptr)));
-    KeyboardManager::init();
-    int pid = 1;
-    if (!GetProcessIdByName("th10.exe", pid)) {
-        printf("th10.exe not running！\n");
+    try {
+        srand(static_cast<unsigned int>(time(nullptr)));
+        KeyboardManager::init();
+        auto game = std::make_shared<GameManager>();
+        bool quit = false;
+        std::cout << "准备完成" << std::endl;
+        pauseUntilPress("请将焦点放在风神录窗口上，开始游戏，然后按C开启AI", 'C');
+        std::cout << "已开始游戏，按Q键退出" << std::endl;
+        unsigned long long frameCount = 0;
+        while (!quit) {
+            StopWatch watch;
+            watch.start();
+            frameCount++;
+            game->update(frameCount);
+            watch.stop();
+            if (isKeyDown('Q'))
+                quit = true;
+            std::this_thread::sleep_for(microseconds(std::max(0, 14 - watch.elapsed_ms())));
+        }
+        KeyboardManager::sendKeyInfo(0, false, false, false);
         system("pause");
-        return 0;
     }
-    auto process = OpenProcess(PROCESS_VM_READ, true, pid);
-    if (!process) {
-        printf("cannot open th10 process！\n");
+    catch (std::exception& e) {
+        std::cout << e.what() << std::endl;
         system("pause");
-        return 0;
     }
-    auto game = std::make_shared<GameManager>(process);
-    bool quit = false;
-    std::cout << "准备完成" << std::endl;
-    pauseUntilPress("请将焦点放在风神录窗口上，开始游戏，然后按C开启AI", 'C');
-    std::cout << "已开始游戏，按Q键退出" << std::endl;
-    unsigned long long frameCount = 0;
-    while (!quit) {
-        StopWatch watch;
-        watch.start();
-        frameCount++;
-        game->update(frameCount);
-        watch.stop();
-        if (isKeyDown('Q'))
-            quit = true;
-        std::this_thread::sleep_for(microseconds(std::max(0, 14 - watch.elapsed_ms())));
-    }
-    KeyboardManager::sendKeyInfo(0, false, false, false);
-    system("pause");
 }

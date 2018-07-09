@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "Vec2.hpp"
 #include "Object.hpp"
-#include "Windows.hpp"
+#include "GameConnection.hpp"
 
 const double s2d2 = sqrt(2.0) / 2.0;
 const double dx[9] = {0, 1.0, s2d2, 0, -s2d2, -1.0, -s2d2, 0, s2d2};
@@ -51,10 +51,7 @@ struct NodeSave {
 
 class GameManager {
 public:
-    GameManager(HANDLE hprocess) {
-        mHprocess = hprocess;
-        mState = GameState::NORMAL;
-    }
+    GameManager() : mState(GameState::NORMAL), mConnection(std::move(createGameConnection())) {}
     void update(unsigned long long frameCount);
 private:
     std::map<Node, NodeSave> valueMap;
@@ -65,7 +62,7 @@ private:
     std::vector<Object> mBullet;
     std::vector<Laser> mLaser;
     std::vector<Object> mPowers;
-    HANDLE mHprocess;
+    std::unique_ptr<GameConnection> mConnection;
     bool legalState(Node state) {
         Object newPlayer = Object(state.pos.x, state.pos.y, mPlayer.size.x, mPlayer.size.y);
         for (auto bullet : mBullet) {
@@ -145,11 +142,6 @@ private:
         */
         //return 0.60;
     }
-    void GetPowers(std::vector<Object> &powers);
-    void GetEnemyData(std::vector<Object> &enemy);
-    void GetEnemyBulletData(std::vector<Object> &bullet, double maxRange);
-    void GetPlayerData(Player &self);
-    void GetEnemyLaserData(std::vector<Laser> &laser);
     double getDis(Vec2d point1, Vec2d point2) {
         return sqrt((point1.x - point2.x) * (point1.x - point2.x) + (point1.y - point2.y) * (point1.y - point2.y));
     }
