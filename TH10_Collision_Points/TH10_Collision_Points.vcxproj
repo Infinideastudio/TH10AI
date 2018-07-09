@@ -19,13 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\Src\GameConnectionTH10.cpp" />
+    <ClCompile Include="..\Src\GameManager.cpp" />
+    <ClCompile Include="..\Src\KeyboardManager.cpp" />
+    <ClCompile Include="..\Src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\GameManager.hpp" />
-    <ClInclude Include="..\src\KeyboardManager.hpp" />
-    <ClInclude Include="..\src\Object.hpp" />
-    <ClInclude Include="..\src\Vec2.hpp" />
+    <ClInclude Include="..\Src\GameConnection.hpp" />
+    <ClInclude Include="..\Src\GameManager.hpp" />
+    <ClInclude Include="..\Src\KeyboardManager.hpp" />
+    <ClInclude Include="..\Src\Object.hpp" />
+    <ClInclude Include="..\Src\Vec2.hpp" />
+    <ClInclude Include="..\Src\Windows.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CF610FEC-D7F3-4AAF-8661-23758D2EA736}</ProjectGuid>

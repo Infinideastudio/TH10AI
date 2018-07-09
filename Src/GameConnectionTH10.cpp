@@ -69,7 +69,6 @@ void GameConnectionTH10::GetEnemyData(std::vector<Object> &enemy) noexcept {
                     ReadProcessMemory(mHProcess, (LPCVOID) (obj_addr + 0x30), &y, 4, &nbr);
                     ReadProcessMemory(mHProcess, (LPCVOID) (obj_addr + 0xB8), &w, 4, &nbr);
                     ReadProcessMemory(mHProcess, (LPCVOID) (obj_addr + 0xBC), &h, 4, &nbr);
-
                     enemy.emplace_back(x, y, w, h);
                 }
             }
@@ -82,7 +81,7 @@ void GameConnectionTH10::GetEnemyData(std::vector<Object> &enemy) noexcept {
 }
 
 void
-GameConnectionTH10::GetEnemyBulletData(std::vector<Object> &bullet, const Player &player, double maxRange) noexcept {
+GameConnectionTH10::GetEnemyBulletData(std::vector<Object> &bullet, const Player& player, double maxRange) noexcept {
     bullet.clear();
     int base;
     DWORD nbr;
