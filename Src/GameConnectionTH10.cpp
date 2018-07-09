@@ -21,24 +21,22 @@ private:
     }
 };
 
+namespace { char staticBuffer[0x7F0 * 2001]; }
+
 void GameConnectionTH10::GetPowers(std::vector<Object> &powers) noexcept {
     DWORD nbr;
     powers.clear();
     int base;
+    char* ebp = staticBuffer;
     ReadProcessMemory(mHProcess, (LPCVOID) 0x00477818, &base, 4, &nbr);
     if (base == NULL) {
         return;
     }
-    int esi = base + 0x14;
-    int ebp = esi + 0x3B0;
-
+    ReadProcessMemory(mHProcess, (LPCVOID) (base + 0x3C0), staticBuffer, 0x3F0 * 2000, &nbr);
     for (int i = 0; i < 2000; i++) {
-        int eax;
-        ReadProcessMemory(mHProcess, (LPCVOID) (ebp + 0x2C), &eax, 4, &nbr);
-        if (eax != 0) {
-            float x, y;
-            ReadProcessMemory(mHProcess, (LPCVOID) (ebp - 0x4), &x, 4, &nbr);
-            ReadProcessMemory(mHProcess, (LPCVOID) (ebp), &y, 4, &nbr);
+        const int eax = (*reinterpret_cast<int*>(ebp + 0x30));
+        if (eax) {
+            const float x = *reinterpret_cast<float*>(ebp), y = *reinterpret_cast<float*>(ebp + 0x4);
             powers.emplace_back(x, y, 6, 6);
         }
         ebp += 0x3F0;
@@ -83,36 +81,26 @@ void GameConnectionTH10::GetEnemyData(std::vector<Object> &enemy) noexcept {
 void
 GameConnectionTH10::GetEnemyBulletData(std::vector<Object> &bullet, const Player& player, double maxRange) noexcept {
     bullet.clear();
-    int base;
+    int base, eax;
     DWORD nbr;
+    char* ebx = staticBuffer;
     ReadProcessMemory(mHProcess, (LPCVOID) 0x004776F0, &base, 4, &nbr);
-    if (base == NULL) {
-        return;
+    if (!base) return;
+    ReadProcessMemory(mHProcess, (LPCVOID) 0x00477810, &eax, 4, &nbr);
+    if (eax) {
+        ReadProcessMemory(mHProcess, (LPCVOID) (eax + 0x58), &eax, 4, &nbr);
+        if (eax & 0x00000400) return;
     }
-    int ebx = base + 0x60;
+    ReadProcessMemory(mHProcess, (LPCVOID) (base + 0x60), staticBuffer, 0x7F0 * 2000, &nbr);
     for (int i = 0; i < 2000; i++) {
-        int edi = ebx + 0x400;
-        int bp;
-        ReadProcessMemory(mHProcess, (LPCVOID) (edi + 0x46), &bp, 4, &nbr);
-        bp = bp & 0x0000FFFF;
+        const int bp = (*reinterpret_cast<int*>(ebx + 0x446))  & 0x0000FFFF;
         if (bp) {
-            int eax;
-            ReadProcessMemory(mHProcess, (LPCVOID) (0x477810), &eax, 4, &nbr);
-            if (eax != NULL) {
-                ReadProcessMemory(mHProcess, (LPCVOID) (eax + 0x58), &eax, 4, &nbr);
-                if (!(eax & 0x00000400)) {
-                    float x, y, w, h, dx, dy;
-                    ReadProcessMemory(mHProcess, (LPCVOID) (ebx + 0x3C0), &dx, 4, &nbr);
-                    ReadProcessMemory(mHProcess, (LPCVOID) (ebx + 0x3C4), &dy, 4, &nbr);
-                    ReadProcessMemory(mHProcess, (LPCVOID) (ebx + 0x3B4), &x, 4, &nbr);
-                    ReadProcessMemory(mHProcess, (LPCVOID) (ebx + 0x3B8), &y, 4, &nbr);
-                    ReadProcessMemory(mHProcess, (LPCVOID) (ebx + 0x3F0), &w, 4, &nbr);
-                    ReadProcessMemory(mHProcess, (LPCVOID) (ebx + 0x3F4), &h, 4, &nbr);
-                    //为了效率，只考虑可能会碰到的子弹
-                    if (getSquareDis(Vec2d(x, y), player.pos) <= maxRange * maxRange)
-                        bullet.emplace_back(x, y, w, h, dx / 2.0f, dy / 2.0f);
-                }
-            }
+            const float x = *reinterpret_cast<float*>(ebx + 0x3B4), y = *reinterpret_cast<float*>(ebx + 0x3B8),
+                    w = *reinterpret_cast<float*>(ebx + 0x3F0), h = *reinterpret_cast<float*>(ebx + 0x3F4),
+                    dx = *reinterpret_cast<float*>(ebx + 0x3C0), dy = *reinterpret_cast<float*>(ebx + 0x3C4);
+            //为了效率，只考虑可能会碰到的子弹
+            if (getSquareDis(Vec2d(x, y), player.pos) <= maxRange * maxRange)
+                bullet.emplace_back(x, y, w, h, dx / 2.0f, dy / 2.0f);
         }
         ebx += 0x7F0;
     }
