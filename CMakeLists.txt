@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+set(CMAKE_CXX_STANDARD 14)
+project(TH10_AI)
+file(GLOB SRC "src/*.*")
+add_executable(TH10_AI ${SRC})
