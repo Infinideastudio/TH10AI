@@ -21,7 +21,7 @@ public:
     void stop() noexcept { mEndTime = steady_clock::now(); }
     void restart() noexcept { start(); }
     steady_clock::duration elapsed() const noexcept { return mEndTime - mBeginTime; }
-    int elapsed_ms() const noexcept { return static_cast<int>(duration_cast<microseconds>(elapsed()).count()); };
+    int elapsed_ms() const noexcept { return static_cast<int>(duration_cast<milliseconds>(elapsed()).count()); };
     int elapsed_s() const noexcept { return static_cast<int>(duration_cast<seconds>(elapsed()).count()); };
 private:
     steady_clock::time_point mBeginTime, mEndTime;
@@ -53,15 +53,15 @@ int main(int argc, char **argv) {
         pauseUntilPress("请将焦点放在风神录窗口上，开始游戏，然后按C开启AI", 'C');
         std::cout << "已开始游戏，按Q键退出" << std::endl;
         unsigned long long frameCount = 0;
+        StopWatch watch;
         while (!quit) {
-            StopWatch watch;
             watch.start();
             frameCount++;
             game->update(frameCount);
             watch.stop();
             if (isKeyDown('Q'))
                 quit = true;
-            std::this_thread::sleep_for(microseconds(std::max(0, 14 - watch.elapsed_ms())));
+            std::this_thread::sleep_for(milliseconds(std::max(0, 14 - watch.elapsed_ms())));
         }
         KeyboardManager::sendKeyInfo(0, false, false, false);
         system("pause");
