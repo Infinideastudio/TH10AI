@@ -4,7 +4,7 @@ void GameManager::update(unsigned long long frameCount) {
     const int maxDepth = 4;
     mConnection->GetPlayerData(mPlayer);
     mConnection->GetEnemyData(mEnemy);
-    mConnection->GetEnemyBulletData(mBullet, mPlayer, (double) maxDepth * playerSpeed[0] + 15.0);
+    mConnection->GetEnemyBulletData(mBullet, mPlayer, static_cast<double>(maxDepth) * playerSpeed[0] + 15.0);
     mConnection->GetEnemyLaserData(mLaser);
     mConnection->GetPowers(mPowers);
 
@@ -75,24 +75,24 @@ void GameManager::update(unsigned long long frameCount) {
     }
 }
 
-bool GameManager::legalState(Node state) {
+bool GameManager::legalState(Node state) const noexcept {
     Object newPlayer = Object(state.pos.x, state.pos.y, mPlayer.size.x, mPlayer.size.y);
     for (auto bullet : mBullet) {
         bullet.pos += bullet.delta * state.time;
-        if (hittest(bullet, newPlayer)) {
+        if (hitTest(bullet, newPlayer)) {
             return false;
         }
     }
     for (auto enemy : mEnemy) {
         enemy.pos += enemy.delta * state.time;
-        if (hittest(enemy, newPlayer)) {
+        if (hitTest(enemy, newPlayer)) {
             return false;
         }
     }
     return true;
 }
 
-double GameManager::getValue(Node state) {
+double GameManager::getValue(Node state) const noexcept {
     double value = 0.0;
     //初次估价
     double minEnemyDis = 400.0;
@@ -104,7 +104,7 @@ double GameManager::getValue(Node state) {
     double y = -1;
     for (auto &power : mPowers) {
         Vec2d newPowerPos = power.pos + power.delta * state.time;
-        double dis = getSquareDis(newPowerPos, newPos);
+        double dis = distanceSqr(newPowerPos, newPos);
         if (dis < minPowerDis) {
             minPowerDis = dis;
             y = newPowerPos.y;
@@ -127,7 +127,7 @@ double GameManager::getValue(Node state) {
     double count = 0;
     for (auto bullet : mBullet) {
         bullet.pos += bullet.delta * state.time;
-        if (getDis(bullet.pos, newPos) <= 30) {
+        if (distanceSqr(bullet.pos, newPos) <= 900) {
             count++;
             Vec2d dirVec = (newPos - bullet.pos).unit();
             Vec2d bulletDir = bullet.delta.unit();
@@ -145,8 +145,8 @@ double GameManager::getValue(Node state) {
     return value;
 }
 
-Vec2d GameManager::fixupPos(const Vec2d &pos) {
-    Vec2d res = pos;
+Vec2d GameManager::fixupPos(const Vec2d &pos) noexcept  {
+    auto res = pos;
     if (res.x < ulCorner.x)res.x = ulCorner.x;
     if (res.y < ulCorner.y)res.y = ulCorner.y;
     if (res.x > drCorner.x)res.x = drCorner.x;
@@ -154,12 +154,12 @@ Vec2d GameManager::fixupPos(const Vec2d &pos) {
     return res;
 }
 
-bool GameManager::hittest(Object &a, Object &b) {
+bool GameManager::hitTest(const Object& a, const Object& b) noexcept {
     return abs(a.pos.x - b.pos.x) <= ((a.size.x + b.size.x) / 2.0) + 5 &&
     abs(a.pos.y - b.pos.y) <= ((a.size.y + b.size.y) / 2.0) + 5;
 }
 
-double GameManager::getMapValue(Vec2d pos) {
+double GameManager::getMapValue(Vec2d pos) noexcept {
     double dis = abs(390 - pos.y);
     double disx = abs(0 - pos.x) / 10;
     return ((410.0) - dis - disx) / (410.0);

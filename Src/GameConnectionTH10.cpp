@@ -1,6 +1,6 @@
 #include "GameConnection.hpp"
 #include "KeyboardManager.hpp"
-#include <Windows.h>
+#include "Windows.hpp"
 #include <TlHelp32.h>
 
 class GameConnectionTH10 : public GameConnection {
@@ -16,11 +16,8 @@ public:
 private:
     HANDLE mHProcess{nullptr};
     static bool GetProcessIdByName(const char *exeFileName, DWORD &pid) noexcept;
-    static double getSquareDis(Vec2d point1, Vec2d point2) {
-        return (point1.x - point2.x) * (point1.x - point2.x) + (point1.y - point2.y) * (point1.y - point2.y);
-    }
     void readProcessRaw(intptr_t offset, size_t length, void *target) const noexcept {
-        static thread_local SIZE_T  nbr;
+        static thread_local SIZE_T nbr;
         ReadProcessMemory(mHProcess, reinterpret_cast<LPCVOID>(offset), target, length, &nbr);
     }
     template<class T>
@@ -93,7 +90,7 @@ GameConnectionTH10::GetEnemyBulletData(std::vector<Object> &bullet, const Player
                     w = read<float>(ebx + 0x3F0), h = read<float>(ebx + 0x3F4),
                     dx = read<float>(ebx + 0x3C0), dy = read<float>(ebx + 0x3C4);
             //为了效率，只考虑可能会碰到的子弹
-            if (getSquareDis(Vec2d(x, y), player.pos) <= maxRange * maxRange)
+            if (distanceSqr(Vec2d(x, y), player.pos) <= maxRange * maxRange)
                 bullet.emplace_back(x, y, w, h, dx / 2.0f, dy / 2.0f);
         }
         ebx += 0x7F0;
@@ -129,7 +126,10 @@ void GameConnectionTH10::sendKeyInfo(int32_t dir, bool shift, bool z, bool x) no
     KeyboardManager::sendKeyInfo(dir, shift, z, x);
 }
 
-GameConnectionTH10::~GameConnectionTH10() noexcept { CloseHandle(mHProcess); }
+GameConnectionTH10::~GameConnectionTH10() noexcept {
+    GameConnectionTH10::sendKeyInfo(0, false, false, false);
+    CloseHandle(mHProcess);
+}
 
 GameConnectionTH10::GameConnectionTH10() {
     DWORD pid = 1;
