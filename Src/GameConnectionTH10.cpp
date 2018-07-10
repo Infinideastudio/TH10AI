@@ -35,7 +35,7 @@ void GameConnectionTH10::GetPowers(std::vector<Object> &powers) noexcept {
     ReadProcessMemory(mHProcess, (LPCVOID) (base + 0x3C0), staticBuffer, 0x3F0 * 2000, &nbr);
     for (int i = 0; i < 2000; i++) {
         const int eax = (*reinterpret_cast<int*>(ebp + 0x30));
-        if (eax) {
+        if (eax==1) {
             const float x = *reinterpret_cast<float*>(ebp), y = *reinterpret_cast<float*>(ebp + 0x4);
             powers.emplace_back(x, y, 6, 6);
         }

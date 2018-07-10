@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
             watch.stop();
             if (isKeyDown('Q'))
                 quit = true;
+			cout << watch.elapsed_ms()/16.0*100<<"%"<< endl;
             std::this_thread::sleep_for(milliseconds(std::max(0, 14 - watch.elapsed_ms())));
         }
         KeyboardManager::sendKeyInfo(0, false, false, false);
