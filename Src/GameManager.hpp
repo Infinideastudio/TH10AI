@@ -39,7 +39,7 @@ struct NodeSave {
     bool shift;
     int from;
     double value;
-    NodeSave() {}
+    NodeSave() = default;
     NodeSave(int from_, bool shift_, double value_) {
         from = from_;
         shift = shift_;
@@ -49,7 +49,7 @@ struct NodeSave {
 
 class GameManager {
 public:
-    GameManager() : mState(GameState::NORMAL), mConnection(std::move(createGameConnection())) {}
+    GameManager() : mState(GameState::NORMAL), mConnection(createGameConnection()) {}
     void update(unsigned long long frameCount);
 private:
     std::map<Node, NodeSave> valueMap;

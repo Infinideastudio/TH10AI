@@ -20,7 +20,7 @@ private:
         return (point1.x - point2.x) * (point1.x - point2.x) + (point1.y - point2.y) * (point1.y - point2.y);
     }
     void readProcessRaw(intptr_t offset, size_t length, void *target) const noexcept {
-        static thread_local DWORD nbr;
+        static thread_local SIZE_T  nbr;
         ReadProcessMemory(mHProcess, reinterpret_cast<LPCVOID>(offset), target, length, &nbr);
     }
     template<class T>
