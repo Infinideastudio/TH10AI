@@ -51,6 +51,7 @@ class GameManager {
 public:
     GameManager() : mState(GameState::NORMAL), mConnection(std::move(createGameConnection())) {}
     void update(unsigned long long frameCount);
+	void outputValueMap(char* path);
 private:
     std::map<Node, NodeSave> valueMap;
     std::queue<Node> bfsQueue;

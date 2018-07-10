@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <string>
 #include <ctime>
+#include <sstream>
 #include <thread>
 #include "KeyboardManager.hpp"
 #include "GameManager.hpp"
@@ -34,15 +35,13 @@ void PointRotate(float cx, float cy, float &x, float &y, float arc) {
     x = _x;
     y = _y;
 }
-
 void pauseUntilPress(const std::string &info, char key) {
-    std::cout << info << std::endl;
-    while (true) {
-        if (isKeyDown(key))return;
-        std::this_thread::sleep_for(10ms);
-    }
+	std::cout << info << std::endl;
+	while (true) {
+		if (isKeyDown(key))return;
+		std::this_thread::sleep_for(10ms);
+	}
 }
-
 int main(int argc, char **argv) {
     try {
         srand(static_cast<unsigned int>(time(nullptr)));
@@ -51,16 +50,33 @@ int main(int argc, char **argv) {
         bool quit = false;
         std::cout << "准备完成" << std::endl;
         pauseUntilPress("请将焦点放在风神录窗口上，开始游戏，然后按C开启AI", 'C');
-        std::cout << "已开始游戏，按Q键退出" << std::endl;
+        std::cout << "已开始游戏，按P键打印估价图，Q键退出" << std::endl;
         unsigned long long frameCount = 0;
         StopWatch watch;
+		int mapOutputCount = 0;
+		double cd = 0;
+		double maxcd = 10;
         while (!quit) {
+			if(cd>0)cd-=1.0;
+			if (isKeyDown('Q'))
+				break;
+			if (isKeyDown('P')&&cd<=0)
+			{
+				cd = maxcd;
+				mapOutputCount++;
+				std::stringstream outputStream;
+				outputStream << "./value" << mapOutputCount<< ".bmp";
+				char str[99];
+				memcpy(str, outputStream.str().c_str(), sizeof(char)*(outputStream.str().size()+1));
+				printf("%s\n", str);
+				game->outputValueMap(str);
+				continue;
+			}
             watch.start();
             frameCount++;
             game->update(frameCount);
             watch.stop();
-            if (isKeyDown('Q'))
-                quit = true;
+            
 			//cout << watch.elapsed_ms()/16.0*100<<"%"<< endl;
             std::this_thread::sleep_for(milliseconds(std::max(0, 16 - watch.elapsed_ms())));
         }

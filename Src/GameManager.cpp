@@ -1,5 +1,37 @@
 #include "GameManager.hpp"
+#include "bmpCreater.hpp"
+#include <iostream>
 
+void GameManager::outputValueMap(char* path)
+{
+	mConnection->GetPlayerData(mPlayer);
+	mConnection->GetEnemyData(mEnemy);
+	mConnection->GetEnemyBulletData(mBullet, mPlayer, 99999.0);
+	mConnection->GetEnemyLaserData(mLaser);
+	mConnection->GetPowers(mPowers);
+	static Pixel map[480][400];
+	memset(map, 0, sizeof(map)); // 设置背景为黑色
+	double total = 400 * 480;
+	double now = 0;
+	for (int i = 0; i < 400; ++i)
+	{
+		for (int j = 0; j < 480; ++j)
+		{
+			now++;
+			Node state = Node(0, Vec2d(i - 200, j));
+			if (legalState(state))
+			{
+				double value = getValue(state);
+				double k = 255.0 / 600.0, b = 140.0 * k;
+				value = k * value + b;
+				map[479-j][i].g = min(255,max(0,(int)value));
+				map[479-j][i].r = min(255, max(0, 255-(int)value));
+			}
+		}
+		//if (i % 100 == 0)std::cout << now / total * 100.0<<"%" << std::endl;
+	}
+	generateBmp((BYTE*)map, 400, 480, path);
+}
 void GameManager::update(unsigned long long frameCount) {
     const int maxDepth = 4;
     mConnection->GetPlayerData(mPlayer);
@@ -137,7 +169,7 @@ double GameManager::getValue(Node state) {
     //击破敌机估价
     for (auto &enemy : mEnemy) {
         double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
-        minEnemyDis = std::min(minEnemyDis, dis);
+        minEnemyDis = min(minEnemyDis, dis);
     }
     value += 80.0 * (400.0 - minEnemyDis) / 400.0;
     //子弹估价
