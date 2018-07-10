@@ -43,5 +43,8 @@
     <ClInclude Include="..\Src\KeyboardManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\Src\bmpCreater.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

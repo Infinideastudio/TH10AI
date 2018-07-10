@@ -25,6 +25,7 @@
     <ClCompile Include="..\Src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Src\bmpCreater.hpp" />
     <ClInclude Include="..\Src\GameConnection.hpp" />
     <ClInclude Include="..\Src\GameManager.hpp" />
     <ClInclude Include="..\Src\KeyboardManager.hpp" />

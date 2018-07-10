@@ -4,7 +4,7 @@ void GameManager::update(unsigned long long frameCount) {
     const int maxDepth = 4;
     mConnection->GetPlayerData(mPlayer);
     mConnection->GetEnemyData(mEnemy);
-    mConnection->GetEnemyBulletData(mBullet, mPlayer, static_cast<double>(maxDepth) * playerSpeed[0] + 15.0);
+    mConnection->GetEnemyBulletData(mBullet, mPlayer, (double) maxDepth * playerSpeed[0] + 15.0);
     mConnection->GetEnemyLaserData(mLaser);
     mConnection->GetPowers(mPowers);
 
@@ -50,6 +50,7 @@ void GameManager::update(unsigned long long frameCount) {
             int moveKeyChoice = -1;
             bool useShift = false;
             bool useBomb = false;
+			NodeSave movement;
             for (auto &&item:valueMap) {
                 //printf("%d\n", item.second.value);
                 if (item.first.time == 0)continue;
@@ -59,10 +60,25 @@ void GameManager::update(unsigned long long frameCount) {
                     maxValue = item.second.value;
                     useShift = item.second.shift;
                     moveKeyChoice = keyinfo[item.second.from];
+					movement = item.second;
                 }
             }
             //std::cout<<"value:" << maxValue << std::endl;
-            if (haveNoChoice)useBomb = true;
+			useBomb = false;
+			Object newPlayer = Object(mPlayer.pos.x, mPlayer.pos.y, mPlayer.size.x, mPlayer.size.y);
+			for (auto bullet : mBullet) {
+				if (hittestBombChoice(bullet, newPlayer)) {
+					useBomb=true;
+					break;
+				}
+			}
+			for (auto enemy : mEnemy) {
+				if (hittestBombChoice(enemy, newPlayer)) {
+					useBomb = true;
+					break;
+				}
+			}
+			//Node startState = Node(1, fixupPos(mPlayer.pos));
             if (!mLaser.empty())useBomb = true;
             if (mEnemy.size() <= 1 && mBullet.empty())
                 mConnection->sendKeyInfo(moveKeyChoice, useShift, frameCount % 2, useBomb);
@@ -75,24 +91,24 @@ void GameManager::update(unsigned long long frameCount) {
     }
 }
 
-bool GameManager::legalState(Node state) const noexcept {
+bool GameManager::legalState(Node state) {
     Object newPlayer = Object(state.pos.x, state.pos.y, mPlayer.size.x, mPlayer.size.y);
     for (auto bullet : mBullet) {
         bullet.pos += bullet.delta * state.time;
-        if (hitTest(bullet, newPlayer)) {
+        if (hittest(bullet, newPlayer)) {
             return false;
         }
     }
     for (auto enemy : mEnemy) {
         enemy.pos += enemy.delta * state.time;
-        if (hitTest(enemy, newPlayer)) {
+        if (hittest(enemy, newPlayer)) {
             return false;
         }
     }
     return true;
 }
 
-double GameManager::getValue(Node state) const noexcept {
+double GameManager::getValue(Node state) {
     double value = 0.0;
     //初次估价
     double minEnemyDis = 400.0;
@@ -100,11 +116,13 @@ double GameManager::getValue(Node state) const noexcept {
     Object newPlayer = Object(newPos.x, newPos.y, mPlayer.size.x, mPlayer.size.y);
     minEnemyDis = 400.0;
     //P点距离估价
+	double avgScore = 0;
+	double count = 0;
     double minPowerDis = 390400.0;
     double y = -1;
     for (auto &power : mPowers) {
         Vec2d newPowerPos = power.pos + power.delta * state.time;
-        double dis = distanceSqr(newPowerPos, newPos);
+        double dis = getSquareDis(newPowerPos, newPos);
         if (dis < minPowerDis) {
             minPowerDis = dis;
             y = newPowerPos.y;
@@ -113,9 +131,9 @@ double GameManager::getValue(Node state) const noexcept {
     //if (y >= 250)
     //	value += 200 * (390400.0 - minPowerDis) / 390400.0;
     //else
-    value += 100 * (390400.0 - minPowerDis) / 390400.0;
+    value += 180 * (390400.0 - minPowerDis) / 390400.0;
     //地图位置估价
-    value += 15.0 * getMapValue(newPos);
+    value += 80.0 * getMapValue(newPos);
     //击破敌机估价
     for (auto &enemy : mEnemy) {
         double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
@@ -123,54 +141,66 @@ double GameManager::getValue(Node state) const noexcept {
     }
     value += 80.0 * (400.0 - minEnemyDis) / 400.0;
     //子弹估价
-    double avgScore = 0;
-    double count = 0;
+	avgScore = 0;
+	count = 0;
     for (auto bullet : mBullet) {
         bullet.pos += bullet.delta * state.time;
-        if (distanceSqr(bullet.pos, newPos) <= 900) {
-            count++;
-            Vec2d dirVec = (newPos - bullet.pos).unit();
-            Vec2d bulletDir = bullet.delta.unit();
-            //方向d的价值与方向d和子弹运动方向的夹角有关，夹角越大，价值越高
-            double dirvalue = dirVec.dot(bulletDir);
-            avgScore -= dirvalue + 1.0;
+        if (getDis(bullet.pos, newPos) <= 30) {
+			count++;
+			Vec2d dirVec = (newPos - bullet.pos).unit();
+			Vec2d bulletDir = bullet.delta.unit();
+			//方向d的价值与方向d和子弹运动方向的夹角有关，夹角越大，价值越高
+			double dirvalue = dirVec.dot(bulletDir);
+			dirvalue += 1;
+			avgScore -= dirvalue;
         }
     }
     if (count > 0) {
         avgScore /= count;
-        value += 80.0 * avgScore;
+        value += 70.0 * avgScore;
     }
+	avgScore = 0;
+	count = 0;
+	//敌机估价
+	for (auto &enemy : mEnemy) {
+		double dis = getDis(enemy.pos, newPos);
+		if (dis <= 100) {
+			avgScore -= (10000 - dis* dis) / 10000;
+			count++;
+		}
+	}
+	if (count > 0) {
+		avgScore /= count;
+		value += 120.0 * avgScore;
+	}
     //value += rand() % 10/100.00;
     value -= 0.1 * state.time;
     return value;
 }
 
-Vec2d GameManager::fixupPos(const Vec2d &pos) noexcept  {
-    auto res = pos;
+Vec2d GameManager::fixupPos(const Vec2d &pos) {
+    Vec2d res = pos;
     if (res.x < ulCorner.x)res.x = ulCorner.x;
     if (res.y < ulCorner.y)res.y = ulCorner.y;
     if (res.x > drCorner.x)res.x = drCorner.x;
     if (res.y > drCorner.y)res.y = drCorner.y;
     return res;
 }
-
-bool GameManager::hitTest(const Object& a, const Object& b) noexcept {
-    return abs(a.pos.x - b.pos.x) <= ((a.size.x + b.size.x) / 2.0) + 5 &&
-    abs(a.pos.y - b.pos.y) <= ((a.size.y + b.size.y) / 2.0) + 5;
+bool GameManager::hittestBombChoice(Object &a, Object &b) {
+	return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= 1.0 &&
+		abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= 1.0;
+}
+bool GameManager::hittest(Object &a, Object &b) {
+    return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0)<=5 &&
+    abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0)<=5;
 }
 
-double GameManager::getMapValue(Vec2d pos) noexcept {
-    double dis = abs(390 - pos.y);
-    double disx = abs(0 - pos.x) / 10;
-    return ((410.0) - dis - disx) / (410.0);
-    /*
-    //最中心一块(-100,240)~(100,440)
-    if (pos.x >= -100 && pos.x <= 100 && pos.y >= 240 && pos.y <= 440)return 1.00;
-    //中间层(-180,100)~(180,480)
-    if (pos.x >= -180 && pos.x <= 180 && pos.y >= 100 && pos.y <= 480)return 0.80;
-    //外层
-    */
-    //return 0.60;
+double GameManager::getMapValue(Vec2d pos) {
+	if (pos.y <= 100)
+		return pos.y*0.9/100;
+    double dis = (abs(390 - pos.y)*(-10.0/290.0)+100.0)/100.0;
+    double disx = (200-abs(0 - pos.x)) / 200.0;
+	return dis*0.95+ disx*0.05;
 }
 
 bool operator<(const Node &lhs, const Node &rhs) {
