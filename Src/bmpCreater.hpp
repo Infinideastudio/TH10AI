@@ -41,7 +41,7 @@ typedef struct {
 	DWORD      biClrImportant;//本位图中重要的色彩数
 } BMPINFOHEADER_T;//位图信息头定义
 
-void generateBmp(BYTE * pData, int width, int height, char * filename)//生成Bmp图片，传递RGB值，传递图片像素大小，传递图片存储路径
+void generateBmp(BYTE * pData, int width, int height, const char * filename)//生成Bmp图片，传递RGB值，传递图片像素大小，传递图片存储路径
 {
 	int size = width * height * 3; // 每个像素点3个字节
 								   // 位图第一部分，文件信息
