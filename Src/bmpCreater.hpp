@@ -41,7 +41,7 @@ typedef struct {
 	DWORD      biClrImportant;//±¾Î»Í¼ÖĞÖØÒªµÄÉ«²ÊÊı
 } BMPINFOHEADER_T;//Î»Í¼ĞÅÏ¢Í·¶¨Òå
 
-void generateBmp(BYTE * pData, int width, int height, char * filename)//Éú³ÉBmpÍ¼Æ¬£¬´«µİRGBÖµ£¬´«µİÍ¼Æ¬ÏñËØ´óĞ¡£¬´«µİÍ¼Æ¬´æ´¢Â·¾¶
+void generateBmp(BYTE * pData, int width, int height, const char * filename)//Éú³ÉBmpÍ¼Æ¬£¬´«µİRGBÖµ£¬´«µİÍ¼Æ¬ÏñËØ´óĞ¡£¬´«µİÍ¼Æ¬´æ´¢Â·¾¶
 {
 	int size = width * height * 3; // Ã¿¸öÏñËØµã3¸ö×Ö½Ú
 								   // Î»Í¼µÚÒ»²¿·Ö£¬ÎÄ¼şĞÅÏ¢
@@ -77,7 +77,9 @@ void generateBmp(BYTE * pData, int width, int height, char * filename)//Éú³ÉBmpÍ
 }
 struct Pixel
 {
-	int r, g, b;
+	BYTE b;
+	BYTE g;
+	BYTE r;
 	Pixel() { r = g = b = 0; }
-	Pixel(int r_, int g_, int b_) { r = r_; g = g_;b = b_; }
+	Pixel(BYTE r_, BYTE g_, BYTE b_) { r = r_; g = g_;b = b_; }
 };

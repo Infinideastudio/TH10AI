@@ -11,7 +11,7 @@ namespace {
     constexpr const char KEY_DOWN = 40;
     constexpr const char KEY_X = 88;
     constexpr const char KEY_Z = 90;
-
+	constexpr const char KEY_ESCAPE = 90;
     void sendKey(int key, bool down) noexcept {
         if (keystate[key] != down) {
             keystate[key] = down;
@@ -34,3 +34,10 @@ void KeyboardManager::sendKeyInfo(int dir, bool shift, bool z, bool x) {
 }
 
 void KeyboardManager::init() { memset(keystate, 0, sizeof(keystate)); }
+
+void KeyboardManager::pressEsc() {
+	keybd_event(KEY_ESCAPE, MapVirtualKey(KEY_ESCAPE, 0), 0, 0);
+}
+void KeyboardManager::releaseEsc() {
+	keybd_event(KEY_ESCAPE, MapVirtualKey(KEY_ESCAPE, 0), KEYEVENTF_KEYUP, 0);
+}

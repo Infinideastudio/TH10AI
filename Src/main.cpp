@@ -1,6 +1,6 @@
-#include <chrono>
 #include <thread>
 #include <cstdlib>
+#include <sstream>
 #include <iostream>
 #include <algorithm>
 #include "KeyboardManager.hpp"
@@ -21,6 +21,7 @@ private:
     steady_clock::time_point mBeginTime, mEndTime;
 };
 
+
 void pauseUntilPress(const char* info, char key) {
     std::cout << info << std::endl;
     while (true) {
@@ -36,23 +37,33 @@ int main() {
         bool quit = false;
         std::cout << "准备完成" << std::endl;
         pauseUntilPress("请将焦点放在风神录窗口上，开始游戏，然后按C开启AI", 'C');
-        std::cout << "已开始游戏，按Q键退出" << std::endl;
+        std::cout << "已开始游戏，按P键打印估价图，Q键退出" << std::endl;
         unsigned long long frameCount = 0;
         StopWatch watch;
+        int mapOutputCount = 0;
+        double cd = 0;
+        const double maxcd = 10;
         while (!quit) {
+            if (cd > 0)cd -= 1.0;
+            if (isKeyDown('Q'))
+                break;
+            if (isKeyDown('P') && cd <= 0) {
+                cd = maxcd;
+                mapOutputCount++;
+                std::stringstream outputStream;
+                outputStream << "./value" << mapOutputCount << ".bmp";
+                std::cout << outputStream.str() << std::endl;
+                game->outputValueMap(outputStream.str().c_str());
+                continue;
+            }
             watch.start();
             frameCount++;
             game->update(frameCount);
             watch.stop();
-            if (isKeyDown('Q'))
-                quit = true;
-			cout << watch.elapsed_ms()/16.0*100<<"%"<< endl;
             std::this_thread::sleep_for(milliseconds(std::max(0, 16 - watch.elapsed_ms())));
         }
-        system("pause");
+        KeyboardManager::sendKeyInfo(0, false, false, false);
     }
-    catch (std::exception& e) {
-        std::cout << e.what() << std::endl;
-        system("pause");
-    }
+    catch (std::exception& e) { std::cout << e.what() << std::endl; }
+    system("pause");
 }

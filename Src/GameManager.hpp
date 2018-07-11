@@ -41,6 +41,7 @@ class GameManager {
 public:
     GameManager();
     void update(unsigned long long frameCount);
+	void outputValueMap(const char* path);
 private:
     google::dense_hash_map<uint64_t, NodeSave> valueMap;
     std::queue<Node> bfsQueue;
