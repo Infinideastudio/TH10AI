@@ -186,18 +186,35 @@ double GameManager::getValue(Node state) const noexcept {
     }
     avgScore = 0;
     count = 0;
+	double count2 = 0;
+	double avgScore2 = 0;
     //敌机估价
     for (auto& enemy : mEnemy) {
         double dis = distanceSqr(enemy.pos, newPos);
-        if (dis <= 10000) {
-            avgScore -= (10000 - dis) / 10000;
-            count++;
-        }
+		Vec2d dirVec = (newPos - enemy.pos).unit();
+		Vec2d up(0, -1);
+		double dirvalue = dirVec.dot(up);
+		//必须在很高的位置才起效
+		if (enemy.pos.y <= 240)
+		{
+			dirvalue += 1;
+			avgScore -= dirvalue;
+			count++;
+		}
+		if (dis <= 20000.0)
+		{
+			avgScore2 -= 1.0 - (dis / 20000.0);
+			count2++;
+		}
     }
     if (count > 0) {
         avgScore /= count;
-        value += 120.0 * avgScore;
+        value += 80.0 * avgScore;
     }
+	if (count2 > 0) {
+		avgScore2 /= count2;
+		value += 80.0 * avgScore2;
+	}
     //value += rand() % 10/100.00;
     value -= 0.1 * state.time;
     return value;
@@ -218,8 +235,8 @@ bool GameManager::hitTestBombChoice(const Object& a, const Object& b) noexcept {
 }
 
 bool GameManager::hitTest(const Object& a, const Object& b) noexcept {
-    return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= 5 &&
-        abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= 5;
+    return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= 4.5 &&
+        abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= 4.5;
 }
 
 double GameManager::getMapValue(Vec2d pos) noexcept {
