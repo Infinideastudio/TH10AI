@@ -38,16 +38,10 @@ void GameManager::update(unsigned long long frameCount) {
     mConnection->GetPowers(mPowers);
 
     //确定当前状态
-    //超过5个P点就尝试上线收点
-    //if (mPowers.size() > 5)
-    //{
-    //	mState = GameState::COLLECT;
-    //}else
     mState = GameState::NORMAL;
     switch (mState) {
     case GameState::NORMAL: {
-        //bool ok = false;
-        //double value[9][2];
+		//BFS搜索maxDepth步，找到maxDepth步内价值最高的可到达位置。
         valueMap.erase(valueMap.begin(), valueMap.end());
         Node startState = Node(0, fixupPos(mPlayer.pos));
         valueMap[startState] = NodeSave(0, false, getValue(startState));
@@ -72,8 +66,7 @@ void GameManager::update(unsigned long long frameCount) {
                 }
             }
         }
-        //选择最高估价以及信息输出
-        //printf("%d\n", valueMap.size());
+        //选择最高估价
         bool haveNoChoice = true;
         double maxValue = -99999999999.0;
         int moveKeyChoice = -1;
@@ -81,9 +74,7 @@ void GameManager::update(unsigned long long frameCount) {
         bool useBomb = false;
         NodeSave movement;
         for (auto&& item : valueMap) {
-            //printf("%d\n", item.second.value);
             if (item.first.time == 0)continue;
-            //printf("%.3lf %.3lf %.3lf\n",item.first.pos.x,item.first.pos.y,item.second.value);
             if (item.second.value - maxValue > eps) {
                 haveNoChoice = false;
                 maxValue = item.second.value;
@@ -92,26 +83,31 @@ void GameManager::update(unsigned long long frameCount) {
                 movement = item.second;
             }
         }
-        //std::cout<<"value:" << maxValue << std::endl;
+        //扔雷判断
         useBomb = false;
         Object newPlayer = Object(mPlayer.pos.x, mPlayer.pos.y, mPlayer.size.x, mPlayer.size.y);
+		//1.被子弹打中
         for (auto bullet : mBullet) {
             if (hitTestBombChoice(bullet, newPlayer)) {
                 useBomb = true;
                 break;
             }
         }
+		//2.被体术
         for (auto enemy : mEnemy) {
             if (hitTestBombChoice(enemy, newPlayer)) {
                 useBomb = true;
                 break;
             }
         }
-        //Node startState = Node(1, fixupPos(mPlayer.pos));
+		//3.场上有激光
         if (!mLaser.empty())useBomb = true;
+		//发送决策
         if (mEnemy.size() <= 1 && mBullet.empty())
+			//跳过对话，间隔帧按Z
             mConnection->sendKeyInfo(moveKeyChoice, useShift, frameCount % 2, useBomb);
         else
+			//正常进行游戏
             mConnection->sendKeyInfo(moveKeyChoice, useShift, true, useBomb);
         break;
     }
@@ -120,6 +116,7 @@ void GameManager::update(unsigned long long frameCount) {
     }
 }
 
+//判断状态是否合法(某个位置能否到达)
 bool GameManager::legalState(Node state) const noexcept {
     Object newPlayer = Object(state.pos.x, state.pos.y, mPlayer.size.x, mPlayer.size.y);
     for (auto bullet : mBullet) {
@@ -132,50 +129,42 @@ bool GameManager::legalState(Node state) const noexcept {
     }
     return true;
 }
-
+//对状态进行估价
 double GameManager::getValue(Node state) const noexcept {
     double value = 0.0;
-    //初次估价
     double minEnemyDis = 400.0;
     Vec2d newPos = state.pos;
     Object newPlayer = Object(newPos.x, newPos.y, mPlayer.size.x, mPlayer.size.y);
     minEnemyDis = 400.0;
-    //P点距离估价
-    double avgScore = 0;
-    double count = 0;
+    //收点估价，离点越近，价值越高   
     double minPowerDis = 390400.0;
-    double y = -1;
     for (auto& power : mPowers) {
         Vec2d newPowerPos = power.pos + power.delta * state.time;
         double dis = distanceSqr(newPowerPos, newPos);
         if (dis < minPowerDis) {
             minPowerDis = dis;
-            y = newPowerPos.y;
         }
     }
-    //if (y >= 250)
-    //	value += 200 * (390400.0 - minPowerDis) / 390400.0;
-    //else
     value += 180 * (390400.0 - minPowerDis) / 390400.0;
-    //地图位置估价
+    //地图位置估价(站在地图偏下的位置加分)
     value += 80.0 * getMapValue(newPos);
-    //击破敌机估价
+    //击破敌机估价(站在敌机正下方加分)
     for (auto& enemy : mEnemy) {
         double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
         minEnemyDis = min(minEnemyDis, dis);
     }
     value += 80.0 * (400.0 - minEnemyDis) / 400.0;
-    //子弹估价
-    avgScore = 0;
-    count = 0;
+    //子弹估价(和子弹运动方向夹角越大减分越少)
+	double avgScore = 0;
+	double count = 0;
     for (auto bullet : mBullet) {
         bullet.pos += bullet.delta * state.time;
         if (distanceSqr(bullet.pos, newPos) <= 900) {
             count++;
-            Vec2d dirVec = (newPos - bullet.pos).unit();
+            Vec2d selfDir = (newPos - bullet.pos).unit();
             Vec2d bulletDir = bullet.delta.unit();
-            //方向d的价值与方向d和子弹运动方向的夹角有关，夹角越大，价值越高
-            double dirvalue = dirVec.dot(bulletDir);
+            //该位置的价值与该位置到子弹的连线和子弹运动方向的夹角有关，夹角越大，减分越少
+            double dirvalue = selfDir.dot(bulletDir);
             dirvalue += 1;
             avgScore -= dirvalue;
         }
@@ -191,18 +180,17 @@ double GameManager::getValue(Node state) const noexcept {
     //敌机估价
     for (auto& enemy : mEnemy) {
         double dis = distanceSqr(enemy.pos, newPos);
-		Vec2d dirVec = (newPos - enemy.pos).unit();
+		Vec2d selfDir = (newPos - enemy.pos).unit();
 		Vec2d up(0, -1);
-		double dirvalue = dirVec.dot(up);
-		//必须在很高的位置才起效
-		if (enemy.pos.y <= 240)
-		{
+		double dirvalue = selfDir.dot(up);
+		//站的位置偏高，容易被弹幕封死。“从敌机指向自机的向量”和“从敌机指向正上方的向量”的夹角越大越安全，减分越少。
+		if (enemy.pos.y <= 240){
 			dirvalue += 1;
 			avgScore -= dirvalue;
 			count++;
 		}
-		if (dis <= 20000.0)
-		{
+		//离敌机过进容易被发出的弹幕打死，也可能被体术。因此距离越近减分越多。
+		if (dis <= 20000.0){
 			avgScore2 -= 1.0 - (dis / 20000.0);
 			count2++;
 		}
@@ -219,7 +207,7 @@ double GameManager::getValue(Node state) const noexcept {
     value -= 0.1 * state.time;
     return value;
 }
-
+//修正超出地图的坐标(主要是自机)
 Vec2d GameManager::fixupPos(const Vec2d& pos) noexcept {
     Vec2d res = pos;
     if (res.x < ulCorner.x)res.x = ulCorner.x;
@@ -228,17 +216,18 @@ Vec2d GameManager::fixupPos(const Vec2d& pos) noexcept {
     if (res.y > drCorner.y)res.y = drCorner.y;
     return res;
 }
-
+//扔雷时的碰撞检测，误差为1.0
 bool GameManager::hitTestBombChoice(const Object& a, const Object& b) noexcept {
     return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= 1.0 &&
         abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= 1.0;
 }
-
+//决策时的碰撞检测，将判定范围增加4.5后检测。请不要随意修改这个值。
+//判定过大，AI底力下降。判定过小，AI更容易移动到极其接近子弹的地方，由于视野的局限性，容易撞弹。
 bool GameManager::hitTest(const Object& a, const Object& b) noexcept {
     return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= 4.5 &&
         abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= 4.5;
 }
-
+//地图位置估价
 double GameManager::getMapValue(Vec2d pos) noexcept {
     if (pos.y <= 100)
         return pos.y * 0.9 / 100;
