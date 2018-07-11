@@ -42,7 +42,7 @@ struct Vec2 {
     auto length() const noexcept { return std::sqrt(lengthSqr()); }
     auto norm() const noexcept { return length(); }
     Vec2 unit() const noexcept { return (*this) / norm(); }
-    constexpr T dot(const Vec2& rhs) noexcept { return x * rhs.x + y * rhs.y; }
+	constexpr T dot(const Vec2& rhs) const noexcept { return x * rhs.x + y * rhs.y; }
 };
 
 template <class T>

@@ -1,13 +1,35 @@
 #include "GameManager.hpp"
 #include "bmpCreater.hpp"
 #include <iostream>
-
+Vec2d pointRotate(Vec2d target, Vec2d center, double arc) {
+	float _x, _y;
+	_x = (target.x - center.x) * cos(arc) - (target.y - center.y) * sin(arc);
+	_y = (target.x - center.x) * sin(arc) + (target.y - center.y) * cos(arc);
+	return center + Vec2d(_x, _y);
+}
 void GameManager::outputValueMap(const char* path) {
     mConnection->GetPlayerData(mPlayer);
     mConnection->GetEnemyData(mEnemy);
     mConnection->GetEnemyBulletData(mBullet, mPlayer, 99999.0);
     mConnection->GetEnemyLaserData(mLaser);
     mConnection->GetPowers(mPowers);
+	//将激光的判定设为用AABB包起来那么大(gg,先这么写再慢慢改吧)
+	for (Laser& laser : mLaser)
+	{
+		Vec2d ul = Vec2d(laser.pos.x - laser.size.x / 2.0, laser.pos.y);
+		Vec2d ur = Vec2d(laser.pos.x + laser.size.x / 2.0, laser.pos.y);
+		Vec2d dl = Vec2d(laser.pos.x - laser.size.x / 2.0, laser.pos.y + laser.size.y);
+		Vec2d dr = Vec2d(laser.pos.x + laser.size.x / 2.0, laser.pos.y + laser.size.y);
+		double arc = laser.arc - 3.1415926 * 5.0 / 2.0;
+		ul = pointRotate(ul, laser.pos, arc);
+		ur = pointRotate(ur, laser.pos, arc);
+		dl = pointRotate(dl, laser.pos, arc);
+		dr = pointRotate(dr, laser.pos, arc);
+		laser.pos = (ul + ur + dl + dr) / 4.0;
+		double sizeX = max(max(ul.x, ur.x), max(dl.x, dr.x)) - min(min(ul.x, ur.x), min(dl.x, dr.x));
+		double sizeY = max(max(ul.y, ur.y), max(dl.y, dr.y)) - min(min(ul.y, ur.y), min(dl.y, dr.y));
+		laser.size = Vec2d(sizeX, sizeY);
+	}
     static Pixel map[480][400];
     memset(map, 0, sizeof(map)); // 设置背景为黑色
     double total = 400 * 480;
@@ -28,15 +50,37 @@ void GameManager::outputValueMap(const char* path) {
     }
     generateBmp((BYTE*)map, 400, 480, path);
 }
-
+static int invincibleTime = 0;
 void GameManager::update(unsigned long long frameCount) {
+	const int maxInvincibleTime = 240;
     const int maxDepth = 4;
     mConnection->GetPlayerData(mPlayer);
     mConnection->GetEnemyData(mEnemy);
     mConnection->GetEnemyBulletData(mBullet, mPlayer, (double)maxDepth * playerSpeed[0] + 15.0);
     mConnection->GetEnemyLaserData(mLaser);
     mConnection->GetPowers(mPowers);
-
+	//将激光的判定设为用AABB包起来那么大(gg,先这么写再慢慢改吧)
+	for (Laser& laser : mLaser)
+	{
+		Vec2d ul = Vec2d(laser.pos.x - laser.size.x / 2.0, laser.pos.y);
+		Vec2d ur = Vec2d(laser.pos.x + laser.size.x / 2.0, laser.pos.y);
+		Vec2d dl = Vec2d(laser.pos.x - laser.size.x / 2.0, laser.pos.y + laser.size.y);
+		Vec2d dr = Vec2d(laser.pos.x + laser.size.x / 2.0, laser.pos.y + laser.size.y);
+		double arc = laser.arc - 3.1415926 * 5.0 / 2.0;
+		ul=pointRotate(ul, laser.pos,arc);
+		ur=pointRotate(ur, laser.pos,arc);
+		dl=pointRotate(dl, laser.pos,arc);
+		dr=pointRotate(dr, laser.pos,arc);
+		laser.pos = (ul+ur+dl+dr)/4.0;
+		double sizeX = max(max(ul.x, ur.x), max(dl.x, dr.x))- min(min(ul.x, ur.x), min(dl.x, dr.x));
+		double sizeY = max(max(ul.y, ur.y), max(dl.y, dr.y)) - min(min(ul.y, ur.y), min(dl.y, dr.y));
+		laser.size = Vec2d(sizeX,sizeY);
+	}
+	if (invincibleTime == maxInvincibleTime-60 && mPowers.size() == 0)
+	{
+		invincibleTime = 0;
+	}
+	if (invincibleTime > 0)invincibleTime--;
     //确定当前状态
     mState = GameState::NORMAL;
     switch (mState) {
@@ -87,21 +131,34 @@ void GameManager::update(unsigned long long frameCount) {
         useBomb = false;
         Object newPlayer = Object(mPlayer.pos.x, mPlayer.pos.y, mPlayer.size.x, mPlayer.size.y);
 		//1.被子弹打中
-        for (auto bullet : mBullet) {
-            if (hitTestBombChoice(bullet, newPlayer)) {
-                useBomb = true;
-                break;
-            }
-        }
-		//2.被体术
-        for (auto enemy : mEnemy) {
-            if (hitTestBombChoice(enemy, newPlayer)) {
-                useBomb = true;
-                break;
-            }
-        }
-		//3.场上有激光
-        if (!mLaser.empty())useBomb = true;
+		if (invincibleTime > 0)useBomb = false;
+		else
+		{
+			for (auto bullet : mBullet) {
+				if (hitTestBombChoice(bullet, newPlayer)) {
+					useBomb = true;
+					invincibleTime = maxInvincibleTime;
+					break;
+				}
+			}
+			//2.被体术
+			for (auto enemy : mEnemy) {
+				if (hitTestBombChoice(enemy, newPlayer)) {
+					useBomb = true;
+					invincibleTime = maxInvincibleTime;
+					break;
+				}
+			}
+			//3.被激光打中
+			for (auto laser : mLaser) {
+				if (hitTestBombChoice(laser, newPlayer)) {
+					useBomb = true;
+					invincibleTime = maxInvincibleTime;
+					break;
+				}
+			}
+		}
+        //if (!mLaser.empty())useBomb = true;
 		//发送决策
         if (mEnemy.size() <= 1 && mBullet.empty())
 			//跳过对话，间隔帧按Z
@@ -118,6 +175,7 @@ void GameManager::update(unsigned long long frameCount) {
 
 //判断状态是否合法(某个位置能否到达)
 bool GameManager::legalState(Node state) const noexcept {
+	if (invincibleTime > 0)return true;
     Object newPlayer = Object(state.pos.x, state.pos.y, mPlayer.size.x, mPlayer.size.y);
     for (auto bullet : mBullet) {
         bullet.pos += bullet.delta * state.time;
@@ -127,6 +185,9 @@ bool GameManager::legalState(Node state) const noexcept {
         enemy.pos += enemy.delta * state.time;
         if (hitTest(enemy, newPlayer)) { return false; }
     }
+	//for (auto laser : mLaser) {
+	//	if (hitTest(laser, newPlayer)) { return false; }
+	//}
     return true;
 }
 //对状态进行估价
@@ -145,15 +206,20 @@ double GameManager::getValue(Node state) const noexcept {
             minPowerDis = dis;
         }
     }
-    value += 180 * (390400.0 - minPowerDis) / 390400.0;
+	if (invincibleTime>0)value += 400 * (390400.0 - minPowerDis) / 390400.0;
+	else value += 180 * (390400.0 - minPowerDis) / 390400.0;
+	
     //地图位置估价(站在地图偏下的位置加分)
     value += 80.0 * getMapValue(newPos);
     //击破敌机估价(站在敌机正下方加分)
-    for (auto& enemy : mEnemy) {
-        double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
-        minEnemyDis = min(minEnemyDis, dis);
-    }
-    value += 80.0 * (400.0 - minEnemyDis) / 400.0;
+	if (invincibleTime == 0)
+	{
+		for (auto& enemy : mEnemy) {
+			double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
+			minEnemyDis = min(minEnemyDis, dis);
+		}
+		value += 80.0 * (400 - minEnemyDis) / 400;
+	}
     //子弹估价(和子弹运动方向夹角越大减分越少)
 	double avgScore = 0;
 	double count = 0;
@@ -169,7 +235,7 @@ double GameManager::getValue(Node state) const noexcept {
             avgScore -= dirvalue;
         }
     }
-    if (count > 0) {
+    if (invincibleTime==0&&count > 0) {
         avgScore /= count;
         value += 70.0 * avgScore;
     }
