@@ -27,8 +27,6 @@ struct Node {
     constexpr Node(int8_t time_, Vec2d pos_) noexcept : time(time_), pos(pos_) {}
 };
 
-bool operator<(const Node& lhs, const Node& rhs);
-
 struct NodeSave {
     bool shift;
     int from;
@@ -40,8 +38,8 @@ struct NodeSave {
 class GameManager {
 public:
     GameManager();
-    void update(unsigned long long frameCount);
 	void outputValueMap(const char* path);
+    void update(unsigned long long frameCount);
 private:
     google::dense_hash_map<uint64_t, NodeSave> valueMap { 5500 };
     std::queue<Node> bfsQueue;
@@ -52,6 +50,8 @@ private:
     std::vector<Laser> mLaser;
     std::vector<Object> mPowers;
     std::unique_ptr<GameConnection> mConnection;
+    void updateEnemyLaserBoxes();
+    void updateBoardInformation(const double ratio);
     bool legalState(Node state) const noexcept;
     //估价效率过低，待修改
     double getValue(Node state) const noexcept;

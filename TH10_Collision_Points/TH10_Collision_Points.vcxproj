@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Src\bmpCreater.cpp" />
     <ClCompile Include="..\Src\GameConnectionTH10.cpp" />
     <ClCompile Include="..\Src\GameManager.cpp" />
     <ClCompile Include="..\Src\KeyboardManager.cpp" />

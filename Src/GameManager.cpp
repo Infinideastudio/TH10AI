@@ -14,19 +14,13 @@ GameManager::GameManager(): mState(GameState::NORMAL), mConnection(createGameCon
     valueMap.set_deleted_key(compress(Node(-1, {0.0, 0.0})));
 }
 
-Vec2d pointRotate(Vec2d target, Vec2d center, double arc) {
-    float _x, _y;
-    _x = (target.x - center.x) * cos(arc) - (target.y - center.y) * sin(arc);
-    _y = (target.x - center.x) * sin(arc) + (target.y - center.y) * cos(arc);
-    return center + Vec2d(_x, _y);
+Vec2d pointRotate(const Vec2d target, const Vec2d center, const double arc) noexcept {
+    const auto x = (target.x - center.x) * cos(arc) - (target.y - center.y) * sin(arc);
+    const auto y = (target.x - center.x) * sin(arc) + (target.y - center.y) * cos(arc);
+    return center + Vec2d(x, y);
 }
 
-void GameManager::outputValueMap(const char* path) {
-    mConnection->GetPlayerData(mPlayer);
-    mConnection->GetEnemyData(mEnemy);
-    mConnection->GetEnemyBulletData(mBullet, mPlayer, 99999.0);
-    mConnection->GetEnemyLaserData(mLaser);
-    mConnection->GetPowers(mPowers);
+void GameManager::updateEnemyLaserBoxes() {
     //将激光的判定设为用AABB包起来那么大(gg,先这么写再慢慢改吧)
     for (Laser& laser : mLaser) {
         Vec2d ul = Vec2d(laser.pos.x - laser.size.x / 2.0, laser.pos.y);
@@ -39,10 +33,16 @@ void GameManager::outputValueMap(const char* path) {
         dl = pointRotate(dl, laser.pos, arc);
         dr = pointRotate(dr, laser.pos, arc);
         laser.pos = (ul + ur + dl + dr) / 4.0;
-        double sizeX = max(max(ul.x, ur.x), max(dl.x, dr.x)) - min(min(ul.x, ur.x), min(dl.x, dr.x));
-        double sizeY = max(max(ul.y, ur.y), max(dl.y, dr.y)) - min(min(ul.y, ur.y), min(dl.y, dr.y));
+        double sizeX = std::max(std::max(ul.x, ur.x), std::max(dl.x, dr.x)) - std::min(
+            std::min(ul.x, ur.x), std::min(dl.x, dr.x));
+        double sizeY = std::max(std::max(ul.y, ur.y), std::max(dl.y, dr.y)) - std::min(
+            std::min(ul.y, ur.y), std::min(dl.y, dr.y));
         laser.size = Vec2d(sizeX, sizeY);
     }
+}
+
+void GameManager::outputValueMap(const char* path) {
+    updateBoardInformation(1000.0);
     static Pixel map[480][400];
     memset(map, 0, sizeof(map)); // 设置背景为黑色
     double total = 400 * 480;
@@ -55,41 +55,30 @@ void GameManager::outputValueMap(const char* path) {
                 double value = getValue(state);
                 double k = 255.0 / 600.0, b = 140.0 * k;
                 value = k * value + b;
-                map[479 - j][i].g = min(255,max(0,(int)value));
-                map[479 - j][i].r = min(255, max(0, 255-(int)value));
+                map[479 - j][i].g = std::min(255, std::max(0, (int)value));
+                map[479 - j][i].r = std::min(255, std::max(0, 255 - (int)value));
             }
         }
         //if (i % 100 == 0)std::cout << now / total * 100.0<<"%" << std::endl;
     }
-    generateBmp((BYTE*)map, 400, 480, path);
+    generateBmp(map, 400, 480, path);
 }
 
 static int invincibleTime = 0;
 
+void GameManager::updateBoardInformation(const double ratio) {
+    mConnection->GetPlayerData(mPlayer);
+    mConnection->GetEnemyData(mEnemy);
+    mConnection->GetEnemyBulletData(mBullet, mPlayer, ratio);
+    mConnection->GetEnemyLaserData(mLaser);
+    mConnection->GetPowers(mPowers);
+    updateEnemyLaserBoxes();
+}
+
 void GameManager::update(unsigned long long frameCount) {
     const int maxInvincibleTime = 240;
     const int maxDepth = 4;
-    mConnection->GetPlayerData(mPlayer);
-    mConnection->GetEnemyData(mEnemy);
-    mConnection->GetEnemyBulletData(mBullet, mPlayer, (double)maxDepth * playerSpeed[0] + 15.0);
-    mConnection->GetEnemyLaserData(mLaser);
-    mConnection->GetPowers(mPowers);
-    //将激光的判定设为用AABB包起来那么大(gg,先这么写再慢慢改吧)
-    for (Laser& laser : mLaser) {
-        Vec2d ul = Vec2d(laser.pos.x - laser.size.x / 2.0, laser.pos.y);
-        Vec2d ur = Vec2d(laser.pos.x + laser.size.x / 2.0, laser.pos.y);
-        Vec2d dl = Vec2d(laser.pos.x - laser.size.x / 2.0, laser.pos.y + laser.size.y);
-        Vec2d dr = Vec2d(laser.pos.x + laser.size.x / 2.0, laser.pos.y + laser.size.y);
-        double arc = laser.arc - 3.1415926 * 5.0 / 2.0;
-        ul = pointRotate(ul, laser.pos, arc);
-        ur = pointRotate(ur, laser.pos, arc);
-        dl = pointRotate(dl, laser.pos, arc);
-        dr = pointRotate(dr, laser.pos, arc);
-        laser.pos = (ul + ur + dl + dr) / 4.0;
-        double sizeX = max(max(ul.x, ur.x), max(dl.x, dr.x)) - min(min(ul.x, ur.x), min(dl.x, dr.x));
-        double sizeY = max(max(ul.y, ur.y), max(dl.y, dr.y)) - min(min(ul.y, ur.y), min(dl.y, dr.y));
-        laser.size = Vec2d(sizeX, sizeY);
-    }
+    updateBoardInformation(static_cast<double>(maxDepth) * playerSpeed[0] + 15.0);
     if (invincibleTime == maxInvincibleTime - 60 && mPowers.empty()) { invincibleTime = 0; }
     if (invincibleTime > 0)invincibleTime--;
     //确定当前状态
@@ -225,7 +214,7 @@ double GameManager::getValue(Node state) const noexcept {
     if (invincibleTime == 0) {
         for (auto& enemy : mEnemy) {
             double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
-            minEnemyDis = min(minEnemyDis, dis);
+            minEnemyDis = std::min(minEnemyDis, dis);
         }
         value += 80.0 * (400 - minEnemyDis) / 400;
     }
@@ -313,13 +302,4 @@ double GameManager::getMapValue(Vec2d pos) noexcept {
     double dis = (abs(390 - pos.y) * (-10.0 / 290.0) + 100.0) / 100.0;
     double disx = (200 - abs(0 - pos.x)) / 200.0;
     return dis * 0.95 + disx * 0.05;
-}
-
-bool operator<(const Node& lhs, const Node& rhs) {
-    if (lhs.time < rhs.time)return true;
-    if (lhs.time > rhs.time)return false;
-    if ((rhs.pos.x - lhs.pos.x) > eps)return true;
-    if ((lhs.pos.x - rhs.pos.x) > eps)return false;
-    if ((rhs.pos.y - lhs.pos.y) > eps)return true;
-    return false;
 }
