@@ -1,11 +1,11 @@
 #pragma once
 #include <cstdint>
+#include "Vec2.hpp"
 
-//生成Bmp图片，传递RGB值，传递图片像素大小，传递图片存储路径
-void generateBmp(void* pData, int width, int height, const char* filename); 
+void generateBmp(void* pData, const Vec2i& size, const char* filename);
 
 struct Pixel {
     uint8_t b, g, r;
-    constexpr Pixel(): b(0), g(0), r(0) {}
-    constexpr Pixel(uint8_t r_, uint8_t g_, uint8_t b_) : b(b_), g(g_), r(r_) {}
+    constexpr Pixel() noexcept : b(0), g(0), r(0) {}
+    constexpr Pixel(const uint8_t iR, const uint8_t iG, const uint8_t iB) noexcept : b(iB), g(iG), r(iR) {}
 };
