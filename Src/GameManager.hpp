@@ -43,7 +43,7 @@ public:
     void update(unsigned long long frameCount);
 	void outputValueMap(const char* path);
 private:
-    google::dense_hash_map<uint64_t, NodeSave> valueMap;
+    google::dense_hash_map<uint64_t, NodeSave> valueMap { 5500 };
     std::queue<Node> bfsQueue;
     GameState mState;
     Player mPlayer{};

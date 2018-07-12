@@ -1,7 +1,6 @@
+#pragma once
 #include <pshpack2.h>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <Windows.h>
 /*
 typedef long BOOL;

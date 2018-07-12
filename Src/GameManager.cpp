@@ -97,7 +97,7 @@ void GameManager::update(unsigned long long frameCount) {
     switch (mState) {
     case GameState::NORMAL: {
         //BFS搜索maxDepth步，找到maxDepth步内价值最高的可到达位置。
-        valueMap.erase(valueMap.begin(), valueMap.end());
+        valueMap.clear_no_resize();
         Node startState = Node(0, fixupPos(mPlayer.pos));
         valueMap[compress(startState)] = NodeSave(0, false, getValue(startState));
         bfsQueue.push(startState);
@@ -120,6 +120,7 @@ void GameManager::update(unsigned long long frameCount) {
                 }
             }
         }
+        std::cout << "ValueMap:" << valueMap.size() << std::endl;
 
         //选择最高估价
         bool haveNoChoice = true;
