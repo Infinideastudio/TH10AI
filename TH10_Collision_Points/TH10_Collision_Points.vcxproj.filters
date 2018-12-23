@@ -23,9 +23,6 @@
     <ClCompile Include="..\Src\KeyboardManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\Src\bmpCreater.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Src\Object.hpp">
