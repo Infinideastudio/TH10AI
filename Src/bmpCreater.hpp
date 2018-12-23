@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #include <pshpack2.h>
 #include <cstdio>
 #include <cstdlib>
@@ -27,18 +26,6 @@ struct BMPFILEHEADER_S {
 	WORD    bfReserved1;
 	WORD    bfReserved2;
 	DWORD   bfOffBits;
-=======
-#pragma once
-#include <cstdint>
-#include "Vec2.hpp"
-
-void generateBmp(void* pData, const Vec2i& size, const char* filename);
-
-struct Pixel {
-    uint8_t b, g, r;
-    constexpr Pixel() noexcept : b(0), g(0), r(0) {}
-    constexpr Pixel(const uint8_t iR, const uint8_t iG, const uint8_t iB) noexcept : b(iB), g(iG), r(iR) {}
->>>>>>> 9388c79051604a3fcb3dc29a2c558cf186aa0d56
 };
 typedef struct {
 	DWORD      biSize;//信息头大小

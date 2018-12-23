@@ -13,7 +13,6 @@ enum class PlayerState:int
 };
 struct GameConnection {
     virtual ~GameConnection() noexcept = default;
-<<<<<<< HEAD
 	virtual int getTimeline() noexcept = 0;
     virtual void getPowers(std::vector<Object> &powers) noexcept = 0;
     virtual void getEnemyData(std::vector<Object> &enemy) noexcept = 0;
@@ -51,13 +50,5 @@ private:
 		readProcessRaw(offset, sizeof(T), &result);
 		return result;
 	}
-=======
-    virtual void getPowers(std::vector<Object>& powers) noexcept = 0;
-    virtual void getEnemyData(std::vector<Object>& enemy) noexcept = 0;
-    virtual void getEnemyBulletData(std::vector<Object>& bullet, const Player& player, double maxRange) noexcept = 0;
-    virtual void getPlayerData(Player& self) noexcept = 0;
-    virtual void getEnemyLaserData(std::vector<Laser>& laser) noexcept = 0;
-    virtual void sendKeyInfo(int dir, bool shift, bool z, bool x) noexcept = 0;
->>>>>>> 9388c79051604a3fcb3dc29a2c558cf186aa0d56
 };
 std::unique_ptr<GameConnection> createGameConnection();
