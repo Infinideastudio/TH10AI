@@ -276,3 +276,7 @@ bool operator<(const Node& lhs, const Node& rhs) {
     if ((rhs.pos.y - lhs.pos.y) > eps)return true;
     return false;
 }
+int GameManager::getTimeline() noexcept
+{
+    return mConnection->getTimeline();
+}

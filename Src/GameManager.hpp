@@ -40,6 +40,7 @@ public:
     GameManager() : mState(GameState::NORMAL), mConnection(createGameConnection()) {}
     void update(unsigned long long frameCount,bool enabledMouse);
 	void outputValueMap(const char* path);
+    int getTimeline() noexcept;
 private:
     std::map<Node, NodeSave> valueMap;
     std::queue<Node> bfsQueue;

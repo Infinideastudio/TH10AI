@@ -30,7 +30,6 @@ void pauseUntilPress(const char* info, char key) {
         std::this_thread::sleep_for(10ms);
     }
 }
-GameConnectionTH10 frameSyncer;
 int main() {
     try {
         KeyboardManager::init();
@@ -46,7 +45,7 @@ int main() {
 		double cd = 30;
 		bool mouseMode = false;
 		cout << "鼠标引导当前处于关闭状态" << endl;
-		int gameFrame = frameSyncer.getTimeline();
+		int gameFrame = game->getTimeline();
 		unsigned long long loopCount = 0;
         while (!quit) {
 			if (loopCount % 16 == 0)
@@ -70,7 +69,7 @@ int main() {
 					continue;
 				}
 			}
-			int getGameFrame = frameSyncer.getTimeline();
+			int getGameFrame = game->getTimeline();
 			if (getGameFrame != gameFrame)
 			{
 				if (getGameFrame > gameFrame + 1)
