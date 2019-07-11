@@ -59,7 +59,7 @@ private:
     static Vec2d fixupPos(const Vec2d& pos) noexcept;
     static bool hitTest(const Object& a, const Object& b) noexcept;
 	// Frame Advancing
-	void updateEnemyLaserBoxes() noexcept;
+	void updateEnemyLaserBoxes(const double ratio) noexcept;
 	void updateBoardInformation(double ratio) noexcept;
     //µÿÕºŒª÷√π¿º€
     static double getMapValue(Vec2d pos) noexcept;
