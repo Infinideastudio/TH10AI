@@ -262,7 +262,7 @@ Vec2d GameManager::fixupPos(const Vec2d& pos) noexcept {
 }
 //决策时的碰撞检测
 bool GameManager::hitTest(const Object& a, const Object& b) noexcept {
-	const double hitTestEps = 0.05;//如果经常因为frame lost而撞弹，请适当提高这个值,不要高过0.5
+	const double hitTestEps = 0.05;//此值过小可能导致AI经常冲太高死，但从算法上改进比调大此值要好
     return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= hitTestEps &&
         abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= hitTestEps;
 }
