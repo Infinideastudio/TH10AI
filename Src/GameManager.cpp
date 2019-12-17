@@ -115,7 +115,7 @@ void GameManager::update(unsigned long long frameCount,bool enabledMouse) {
         //std::cout << valueMap.size() << std::endl;
         for (auto&& item : valueMap) {
             if (item.first.time == 0)continue;
-            if (item.second.value - maxValue > eps) {
+            if (item.second.value - maxValue > doubleEqualEps) {
                 haveNoChoice = false;
                 maxValue = item.second.value;
                 useShift = item.second.shift;
@@ -191,8 +191,7 @@ double GameManager::getValue(Node state) const noexcept {
     //地图位置估价(站在地图偏下的位置加分)
     value += 80.0 * getMapValue(newPos);
     //击破敌机估价(站在敌机正下方加分)
-    if (invincibleTime == 0)
-    {
+    if (invincibleTime == 0){
         for (auto& enemy : mEnemy) {
             double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
             minEnemyDis = std::min(minEnemyDis, dis);
@@ -263,8 +262,9 @@ Vec2d GameManager::fixupPos(const Vec2d& pos) noexcept {
 }
 //决策时的碰撞检测
 bool GameManager::hitTest(const Object& a, const Object& b) noexcept {
-    return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= eps+0.5 &&
-        abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= eps+0.5;
+	const double hitTestEps = 0.05;//如果经常因为frame lost而撞弹，请适当提高这个值,不要高过0.5
+    return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= hitTestEps &&
+        abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= hitTestEps;
 }
 //地图位置估价
 double GameManager::getMapValue(Vec2d pos) noexcept {

@@ -9,10 +9,11 @@ const double dx[9] = {0, 1.0, s2d2, 0, -s2d2, -1.0, -s2d2, 0, s2d2};
 const double dy[9] = {0, 0, -s2d2, -1.0, -s2d2, 0, s2d2, 1.0, s2d2};
 const double dx4[5] = { 0, 1.0, 0, -1.0, 0};
 const double dy4[5] = { 0, 0, -1.0, 0, 1.0 };
-const double playerSpeed[2] = {4.5, 2.0};
+const double playerSpeed[2] = {4.5, 2.0};//灵梦4.5/2.0 魔理沙5.0/2.0
 const Vec2d ulCorner = Vec2d(-184, 32);
 const Vec2d drCorner = Vec2d(184, 432);
-const double eps = 1e-2;
+const double eps = 1e-1;
+const double doubleEqualEps = 1e-9;
 //从高位到低位分别为上下左右
 const int keyinfo[9] = {0x0, 0x1, 0x9, 0x8, 0xa, 0x2, 0x6, 0x4, 0x5};
 const int keyinfo4[5] = { 0x0,0x1,0x8,0x2,0x4 };

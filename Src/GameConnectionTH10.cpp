@@ -1,8 +1,7 @@
 #include "GameConnection.hpp"
 #include "KeyboardManager.hpp"
-
 #include <TlHelp32.h>
-
+#include <stdexcept>
 
 namespace {
     char staticBuffer[0x7F0 * 2001];

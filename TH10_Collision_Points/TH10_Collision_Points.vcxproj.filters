@@ -46,8 +46,5 @@
     <ClInclude Include="..\Src\bmpCreater.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\Src\2DOBB.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
