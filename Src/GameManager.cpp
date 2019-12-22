@@ -1,3 +1,4 @@
+#include "Windows.hpp"
 #include "GameManager.hpp"
 #include "bmpCreater.hpp"
 #include "Vec2.hpp"
@@ -11,7 +12,7 @@ Vec2d pointRotate(Vec2d target, Vec2d center, double arc) {
 void GameManager::outputValueMap(const char* path) {
     updateBoardInformation(99999.0);
     static Pixel map[480][400];
-    memset(map, 0, sizeof(map)); // è®¾ç½®èƒŒæ™¯ä¸ºé»‘è‰²
+    memset(map, 0, sizeof(map)); // ÉèÖÃ±³¾°ÎªºÚÉ«
     double total = 400 * 480;
     double now = 0;
     for (int i = 0; i < 400; ++i) {
@@ -44,8 +45,7 @@ void GameManager::updateEnemyLaserBoxes(const double ratio) noexcept {
         const auto delta = (t - s).unit()*5.0;
         double w = laser.size.x*0.5 + 2.0;
         double add = w / laser.size.y;
-        for (double i = 0; i <= 1; i += add)
-        {
+        for (double i = 0; i <= 1; i += add){
             double x = i * s.x + (1.0 - i)*t.x;
             double y = i * s.y + (1.0 - i)*t.y;
             if (distanceSqr(Vec2d(x, y), mPlayer.pos) <= ratio * ratio) {
@@ -70,16 +70,15 @@ void GameManager::update(unsigned long long frameCount,bool enabledMouse) {
 	updateBoardInformation((double)maxDepth * playerSpeed[0] + 15.0);
 	mConnection->getMousePosition(mMousePos);
 	mMousePos = fixupPos(mMousePos);
-	if (invincibleTime == maxInvincibleTime-60 && mPowers.size() == 0)
-    {
+	if (invincibleTime == maxInvincibleTime-60 && mPowers.size() == 0){
         invincibleTime = 0;
     }
     if (invincibleTime > 0)invincibleTime--;
-    //ç¡®å®šå½“å‰çŠ¶æ€
+    //È·¶¨µ±Ç°×´Ì¬
     mState = GameState::NORMAL;
     switch (mState) {
     case GameState::NORMAL: {
-        //BFSæœç´¢maxDepthæ­¥ï¼Œæ‰¾åˆ°maxDepthæ­¥å†…ä»·å€¼æœ€é«˜çš„å¯åˆ°è¾¾ä½ç½®ã€‚
+        //BFSËÑË÷maxDepth²½£¬ÕÒµ½maxDepth²½ÄÚ¼ÛÖµ×î¸ßµÄ¿Éµ½´ïÎ»ÖÃ¡£
         valueMap.erase(valueMap.begin(), valueMap.end());
         Node startState = Node(0, fixupPos(mPlayer.pos));
         valueMap[startState] = NodeSave(0, false, getValue(startState));
@@ -105,7 +104,7 @@ void GameManager::update(unsigned long long frameCount,bool enabledMouse) {
                 }
             }
         }
-        //é€‰æ‹©æœ€é«˜ä¼°ä»·
+        //Ñ¡Ôñ×î¸ß¹À¼Û
         bool haveNoChoice = true;
         double maxValue = -99999999999.0;
         int moveKeyChoice = -1;
@@ -123,19 +122,18 @@ void GameManager::update(unsigned long long frameCount,bool enabledMouse) {
                 movement = item.second;
             }
         }
-        //æ‰”é›·åˆ¤æ–­
+        //ÈÓÀ×ÅĞ¶Ï
         useBomb = false;
-        if (mConnection->GetPlayerStateInformation() == PlayerState::DYING)
-        {
+        if (mConnection->getPlayerStateInformation() == PlayerState::DYING){
             invincibleTime = maxInvincibleTime;
             useBomb = true;
         }
-        //å‘é€å†³ç­–
+        //·¢ËÍ¾ö²ß
         if (mEnemy.size() <= 1 && mBullet.empty())
-            //è·³è¿‡å¯¹è¯ï¼Œé—´éš”å¸§æŒ‰Z
+            //Ìø¹ı¶Ô»°£¬¼ä¸ôÖ¡°´Z
             mConnection->sendKeyInfo(moveKeyChoice, useShift, frameCount % 2, useBomb);
         else
-            //æ­£å¸¸è¿›è¡Œæ¸¸æˆ
+            //Õı³£½øĞĞÓÎÏ·
             mConnection->sendKeyInfo(moveKeyChoice, useShift, true, useBomb);
         break;
     }
@@ -144,7 +142,7 @@ void GameManager::update(unsigned long long frameCount,bool enabledMouse) {
     }
 }
 
-//åˆ¤æ–­çŠ¶æ€æ˜¯å¦åˆæ³•(æŸä¸ªä½ç½®èƒ½å¦åˆ°è¾¾)
+//ÅĞ¶Ï×´Ì¬ÊÇ·ñºÏ·¨(Ä³¸öÎ»ÖÃÄÜ·ñµ½´ï)
 bool GameManager::legalState(Node state) const noexcept {
     if (invincibleTime > 0)return true;
     Object newPlayer = Object(state.pos.x, state.pos.y, mPlayer.size.x, mPlayer.size.y);
@@ -161,13 +159,13 @@ bool GameManager::legalState(Node state) const noexcept {
     //}
     return true;
 }
-//å¯¹çŠ¶æ€è¿›è¡Œä¼°ä»·
+//¶Ô×´Ì¬½øĞĞ¹À¼Û
 double GameManager::getValue(Node state) const noexcept {
     double value = 0.0;
     double minEnemyDis = 400.0;
     Vec2d newPos = state.pos;
     Object newPlayer = Object(newPos.x, newPos.y, mPlayer.size.x, mPlayer.size.y);
-    //é¼ æ ‡å¼•å¯¼æ¨¡å¼ä¼°ä»·
+    //Êó±êÒıµ¼Ä£Ê½¹À¼Û
     if (mouseMode)
     {
         double dis = distance(mMousePos, newPos);
@@ -176,7 +174,7 @@ double GameManager::getValue(Node state) const noexcept {
         return value;
     }
     minEnemyDis = 400.0;
-    //æ”¶ç‚¹ä¼°ä»·ï¼Œç¦»ç‚¹è¶Šè¿‘ï¼Œä»·å€¼è¶Šé«˜   
+    //ÊÕµã¹À¼Û£¬ÀëµãÔ½½ü£¬¼ÛÖµÔ½¸ß   
     double minPowerDis = 390400.0;
     for (auto& power : mPowers) {
         Vec2d newPowerPos = power.pos + power.delta * state.time;
@@ -188,9 +186,9 @@ double GameManager::getValue(Node state) const noexcept {
     if (invincibleTime>0)value += 400 * (390400.0 - minPowerDis) / 390400.0;
     else value += 180 * (390400.0 - minPowerDis) / 390400.0;
 
-    //åœ°å›¾ä½ç½®ä¼°ä»·(ç«™åœ¨åœ°å›¾åä¸‹çš„ä½ç½®åŠ åˆ†)
+    //µØÍ¼Î»ÖÃ¹À¼Û(Õ¾ÔÚµØÍ¼Æ«ÏÂµÄÎ»ÖÃ¼Ó·Ö)
     value += 80.0 * getMapValue(newPos);
-    //å‡»ç ´æ•Œæœºä¼°ä»·(ç«™åœ¨æ•Œæœºæ­£ä¸‹æ–¹åŠ åˆ†)
+    //»÷ÆÆµĞ»ú¹À¼Û(Õ¾ÔÚµĞ»úÕıÏÂ·½¼Ó·Ö)
     if (invincibleTime == 0){
         for (auto& enemy : mEnemy) {
             double dis = abs(enemy.pos.x + enemy.delta.x * state.time - newPos.x);
@@ -198,7 +196,7 @@ double GameManager::getValue(Node state) const noexcept {
         }
         value += 80.0 * (400 - minEnemyDis) / 400;
     }
-    //å­å¼¹ä¼°ä»·(å’Œå­å¼¹è¿åŠ¨æ–¹å‘å¤¹è§’è¶Šå¤§å‡åˆ†è¶Šå°‘)
+    //×Óµ¯¹À¼Û(ºÍ×Óµ¯ÔË¶¯·½Ïò¼Ğ½ÇÔ½´ó¼õ·ÖÔ½ÉÙ)
     double avgScore = 0;
     double count = 0;
     for (auto bullet : mBullet) {
@@ -207,7 +205,7 @@ double GameManager::getValue(Node state) const noexcept {
             count++;
             Vec2d selfDir = (newPos - bullet.pos).unit();
             Vec2d bulletDir = bullet.delta.unit();
-            //è¯¥ä½ç½®çš„ä»·å€¼ä¸è¯¥ä½ç½®åˆ°å­å¼¹çš„è¿çº¿å’Œå­å¼¹è¿åŠ¨æ–¹å‘çš„å¤¹è§’æœ‰å…³ï¼Œå¤¹è§’è¶Šå¤§ï¼Œå‡åˆ†è¶Šå°‘
+            //¸ÃÎ»ÖÃµÄ¼ÛÖµÓë¸ÃÎ»ÖÃµ½×Óµ¯µÄÁ¬ÏßºÍ×Óµ¯ÔË¶¯·½ÏòµÄ¼Ğ½ÇÓĞ¹Ø£¬¼Ğ½ÇÔ½´ó£¬¼õ·ÖÔ½ÉÙ
             double dirvalue = selfDir.dot(bulletDir);
             dirvalue += 1;
             avgScore -= dirvalue;
@@ -221,19 +219,19 @@ double GameManager::getValue(Node state) const noexcept {
     count = 0;
     double count2 = 0;
     double avgScore2 = 0;
-    //æ•Œæœºä¼°ä»·
+    //µĞ»ú¹À¼Û
     for (auto& enemy : mEnemy) {
         double dis = distanceSqr(enemy.pos, newPos);
         Vec2d selfDir = (newPos - enemy.pos).unit();
         Vec2d up(0, -1);
         double dirvalue = selfDir.dot(up);
-        //ç«™çš„ä½ç½®åé«˜ï¼Œå®¹æ˜“è¢«å¼¹å¹•å°æ­»ã€‚â€œä»æ•ŒæœºæŒ‡å‘è‡ªæœºçš„å‘é‡â€å’Œâ€œä»æ•ŒæœºæŒ‡å‘æ­£ä¸Šæ–¹çš„å‘é‡â€çš„å¤¹è§’è¶Šå¤§è¶Šå®‰å…¨ï¼Œå‡åˆ†è¶Šå°‘ã€‚
+        //Õ¾µÄÎ»ÖÃÆ«¸ß£¬ÈİÒ×±»µ¯Ä»·âËÀ¡£¡°´ÓµĞ»úÖ¸Ïò×Ô»úµÄÏòÁ¿¡±ºÍ¡°´ÓµĞ»úÖ¸ÏòÕıÉÏ·½µÄÏòÁ¿¡±µÄ¼Ğ½ÇÔ½´óÔ½°²È«£¬¼õ·ÖÔ½ÉÙ¡£
         if (enemy.pos.y <= 240) {
             dirvalue += 1;
             avgScore -= dirvalue;
             count++;
         }
-        //ç¦»æ•Œæœºè¿‡è¿›å®¹æ˜“è¢«å‘å‡ºçš„å¼¹å¹•æ‰“æ­»ï¼Œä¹Ÿå¯èƒ½è¢«ä½“æœ¯ã€‚å› æ­¤è·ç¦»è¶Šè¿‘å‡åˆ†è¶Šå¤šã€‚
+        //ÀëµĞ»ú¹ı½øÈİÒ×±»·¢³öµÄµ¯Ä»´òËÀ£¬Ò²¿ÉÄÜ±»ÌåÊõ¡£Òò´Ë¾àÀëÔ½½ü¼õ·ÖÔ½¶à¡£
         if (dis <= 20000.0) {
             avgScore2 -= 1.0 - (dis / 20000.0);
             count2++;
@@ -251,7 +249,7 @@ double GameManager::getValue(Node state) const noexcept {
     value -= 0.1 * state.time;
     return value;
 }
-//ä¿®æ­£è¶…å‡ºåœ°å›¾çš„åæ ‡(ä¸»è¦æ˜¯è‡ªæœº)
+//ĞŞÕı³¬³öµØÍ¼µÄ×ø±ê(Ö÷ÒªÊÇ×Ô»ú)
 Vec2d GameManager::fixupPos(const Vec2d& pos) noexcept {
     Vec2d res = pos;
     if (res.x < ulCorner.x)res.x = ulCorner.x;
@@ -260,13 +258,13 @@ Vec2d GameManager::fixupPos(const Vec2d& pos) noexcept {
     if (res.y > drCorner.y)res.y = drCorner.y;
     return res;
 }
-//å†³ç­–æ—¶çš„ç¢°æ’æ£€æµ‹
+//¾ö²ßÊ±µÄÅö×²¼ì²â
 bool GameManager::hitTest(const Object& a, const Object& b) noexcept {
-	const double hitTestEps = 0.05;//æ­¤å€¼è¿‡å°å¯èƒ½å¯¼è‡´AIç»å¸¸å†²å¤ªé«˜æ­»ï¼Œä½†ä»ç®—æ³•ä¸Šæ”¹è¿›æ¯”è°ƒå¤§æ­¤å€¼è¦å¥½
+	const double hitTestEps = 0.05;//´ËÖµ¹ıĞ¡¿ÉÄÜµ¼ÖÂAI¾­³£³åÌ«¸ßËÀ£¬µ«´ÓËã·¨ÉÏ¸Ä½ø±Èµ÷´ó´ËÖµÒªºÃ
     return abs(a.pos.x - b.pos.x) - ((a.size.x + b.size.x) / 2.0) <= hitTestEps &&
         abs(a.pos.y - b.pos.y) - ((a.size.y + b.size.y) / 2.0) <= hitTestEps;
 }
-//åœ°å›¾ä½ç½®ä¼°ä»·
+//µØÍ¼Î»ÖÃ¹À¼Û
 double GameManager::getMapValue(Vec2d pos) noexcept {
     if (pos.y <= 100)
         return pos.y * 0.9 / 100;
@@ -283,7 +281,6 @@ bool operator<(const Node& lhs, const Node& rhs) {
     if ((rhs.pos.y - lhs.pos.y) > eps)return true;
     return false;
 }
-int GameManager::getTimeline() noexcept
-{
+int GameManager::getTimeline() noexcept{
     return mConnection->getTimeline();
 }

@@ -2,12 +2,11 @@
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
-#include "GameConnection.hpp"
 #include <algorithm>
+#include "GameConnection.hpp"
 #include "KeyboardManager.hpp"
 #include "GameManager.hpp"
 
-using namespace std;
 using namespace std::chrono;
 
 class StopWatch {
@@ -21,8 +20,6 @@ public:
 private:
     steady_clock::time_point mBeginTime, mEndTime;
 };
-
-
 void pauseUntilPress(const char* info, char key) {
     std::cout << info << std::endl;
     while (true) {
@@ -41,26 +38,24 @@ int main() {
         unsigned long long frameCount = 0;
         StopWatch watch;
         int mapOutputCount = 0;
-        const double maxcd = 30;
+        const double maxCd = 30;
 		double cd = 30;
 		bool mouseMode = false;
-		cout << "鼠标引导当前处于关闭状态" << endl;
+		std::cout << "鼠标引导当前处于关闭状态" << std::endl;
 		int gameFrame = game->getTimeline();
 		unsigned long long loopCount = 0;
         while (!quit) {
-			if (loopCount % 16 == 0)
-			{		
+			if (loopCount % 16 == 0){		
 				if (cd > 0)cd -= 1.0;
 				if (isKeyDown('Q'))
 					break;
-				if (cd <= 0 && isKeyDown('C'))
-				{
-					cd = maxcd;
+				if (cd <= 0 && isKeyDown('C')){
+					cd = maxCd;
 					mouseMode ^= 1;
-					cout << (mouseMode ? "鼠标引导已开启" : "鼠标引导已关闭") << endl;
+					std::cout << (mouseMode ? "鼠标引导已开启" : "鼠标引导已关闭") << std::endl;
 				}
 				if (isKeyDown('P') && cd <= 0) {
-					cd = maxcd;
+					cd = maxCd;
 					mapOutputCount++;
 					std::stringstream outputStream;
 					outputStream << "./value" << mapOutputCount << ".bmp";
@@ -70,11 +65,9 @@ int main() {
 				}
 			}
 			int getGameFrame = game->getTimeline();
-			if (getGameFrame != gameFrame)
-			{
-				if (getGameFrame > gameFrame + 1)
-				{
-					cout << "Frame Lost!" << endl;
+			if (getGameFrame != gameFrame){
+				if (getGameFrame > gameFrame + 1){
+					std::cout << "Frame Lost!" << std::endl;
 				}
 				gameFrame = getGameFrame;
 				//watch.start();

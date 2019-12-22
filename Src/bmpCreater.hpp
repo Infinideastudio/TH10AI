@@ -2,14 +2,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <Windows.h>
-/*
-typedef long BOOL;
 typedef long LONG;
 typedef unsigned char BYTE;
 typedef unsigned long DWORD;
 typedef unsigned short WORD;
-*/
 //位图文件头文件定义
 //其中不包括文件类型信息（由于结构体的内存结构决定，要是加了的话将不能正确的读取文件信息）
 typedef struct {
@@ -41,8 +37,7 @@ typedef struct {
 	DWORD      biClrImportant;//本位图中重要的色彩数
 } BMPINFOHEADER_T;//位图信息头定义
 
-void generateBmp(BYTE * pData, int width, int height, const char * filename)//生成Bmp图片，传递RGB值，传递图片像素大小，传递图片存储路径
-{
+void generateBmp(BYTE * pData, int width, int height, const char * filename) {//生成Bmp图片，传递RGB值，传递图片像素大小，传递图片存储路径
 	int size = width * height * 3; // 每个像素点3个字节
 								   // 位图第一部分，文件信息
 	BMPFILEHEADER_T bfh;
@@ -75,8 +70,7 @@ void generateBmp(BYTE * pData, int width, int height, const char * filename)//生
 	fwrite(pData, 1, size, fp);
 	fclose(fp);
 }
-struct Pixel
-{
+struct Pixel{
 	BYTE b;
 	BYTE g;
 	BYTE r;

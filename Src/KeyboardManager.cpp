@@ -12,7 +12,7 @@ namespace {
     constexpr const char KEY_X = 88;
     constexpr const char KEY_Z = 90;
 	constexpr const char KEY_ESCAPE = 90;
-    void sendKey(int key, bool down) noexcept {	
+    void sendKey(int key, bool down) noexcept {
         if (keystate[key] != down) {
             keystate[key] = down;
             if (down) keybd_event(key, MapVirtualKey(key, 0), 0, 0);

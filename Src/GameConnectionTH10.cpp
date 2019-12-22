@@ -1,5 +1,6 @@
 #include "GameConnection.hpp"
 #include "KeyboardManager.hpp"
+#include "Windows.hpp"
 #include <TlHelp32.h>
 #include <stdexcept>
 
@@ -8,7 +9,34 @@ namespace {
     template<class T>
     T read(void *buffer) noexcept { return *reinterpret_cast<T *>(buffer); }
 }
-
+class GameConnectionTH10 : public GameConnection {
+public:
+	GameConnectionTH10();
+	~GameConnectionTH10() noexcept override;
+	void getPowers(std::vector<Object>& powers) noexcept override;
+	void getEnemyData(std::vector<Object>& enemy) noexcept override;
+	void getEnemyBulletData(std::vector<Object>& bullet, const Player& player, double maxRange) noexcept override;
+	void getPlayerData(Player& self) noexcept override;
+	void getEnemyLaserData(std::vector<Laser>& laser) noexcept override;
+	void sendKeyInfo(int dir, bool shift, bool z, bool x) noexcept override;
+	void getMousePosition(Vec2d& pos)noexcept override;
+	int getTimeline() noexcept override;
+	PlayerState getPlayerStateInformation()noexcept override;
+private:
+	HWND mWindow{ nullptr };
+	HANDLE mHProcess{ nullptr };
+	static bool GetProcessIdByName(const char* exeFileName, DWORD& pid) noexcept;
+	void readProcessRaw(intptr_t offset, size_t length, void* target) const noexcept {
+		static thread_local SIZE_T nbr;
+		ReadProcessMemory(mHProcess, reinterpret_cast<LPCVOID>(offset), target, length, &nbr);
+	}
+	template<class T>
+	T readProcess(intptr_t offset) const noexcept {
+		T result;
+		readProcessRaw(offset, sizeof(T), &result);
+		return result;
+	}
+};
 void GameConnectionTH10::getPowers(std::vector<Object> &powers) noexcept {
     powers.clear();
     auto ebp = staticBuffer;
@@ -105,10 +133,9 @@ void GameConnectionTH10::getEnemyLaserData(std::vector<Laser> &laser) noexcept {
         }
     }
 }
-PlayerState GameConnectionTH10::GetPlayerStateInformation()noexcept {
+PlayerState GameConnectionTH10::getPlayerStateInformation()noexcept {
 	int base_addr = readProcess<int32_t>(0x00477834);
-	if (!base_addr)
-	{
+	if (!base_addr){
 		return (PlayerState)0;
 	}
 	return (PlayerState)readProcess<int32_t>(base_addr + 0x458);
